@@ -1,7 +1,8 @@
-DB_SOURCE = "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable"
 DB_NAME = shopping_cart
 NETWORK_NAME = shopping-network
 CONTAINER_NAME = shopping-db
+SCHEMA_PATH = src/db/migration
+DB_SOURCE = "postgresql://root:secret@localhost:5432/$(DB_NAME)?sslmode=disable"
 
 network:
 	docker network inspect $(NETWORK_NAME) >/dev/null 2>&1 || \
@@ -17,18 +18,18 @@ drop-db:
 	docker exec -it shopping-db dropdb $(DB_NAME)
 
 migrate-up:
-	migrate -path db/migration -database $(DB_SOURCE) -verbose up
+	migrate -path $(SCHEMA_PATH) -database $(DB_SOURCE) -verbose up
 
 migrate-up-1:
-	migrate -path db/migration -database $(DB_SOURCE) -verbose up 1
+	migrate -path $(SCHEMA_PATH) -database $(DB_SOURCE) -verbose up 1
 
 migrate-down:
-	migrate -path db/migration -database $(DB_SOURCE) -verbose down
+	migrate -path $(SCHEMA_PATH) -database $(DB_SOURCE) -verbose down
 
 migrate-down-1:
-	migrate -path db/migration -database $(DB_SOURCE) -verbose down 1
+	migrate -path $(SCHEMA_PATH) -database $(DB_SOURCE) -verbose down 1
 
 migrate-create:
-	migrate create -ext sql -dir src/db/migration -seq $(name)
+	migrate create -ext sql -dir $(SCHEMA_PATH) -seq $(name)
 
 .PHONY: postgres create-db drop-db migrate-up migrate-up-1 migrate-down migrate-down-1
