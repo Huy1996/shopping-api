@@ -1,0 +1,18 @@
+version: "1"
+cloud:
+  organization: ""
+  project: ""
+  hostname: ""
+project:
+  id: ""
+packages:
+  - name: "db"
+    path: "./src/db/sqlc"
+    queries: "./src/db/query/"
+    schema: "./src/db/migration/"
+    engine: "postgresql"
+    emit_prepared_queries: true
+    emit_interface: true
+    emit_exact_table_names: false
+    emit_json_tags: true
+    emit_empty_slices: true
