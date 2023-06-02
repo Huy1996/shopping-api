@@ -28,7 +28,6 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-          -
     steps:
       - name: Setup Go environment
         uses: actions/setup-go@v4.0.1
