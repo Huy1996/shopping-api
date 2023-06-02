@@ -1,0 +1,46 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+// Version: 1.0
+// Name: Inital Schema
+
+Table user_credential as UC {
+  id uuid [pk]
+  username varchar [unique, not null]
+  hashed_password varchar [not null]
+  email varchar [unique, not null]
+  password_changed_at timestamptz [not null, default: '0001-01-01 00:00:00Z']
+  is_admin bool [not null, default: False]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table user_info as UI {
+  id uuid [pk]
+  user_id uuid [ref: - UC.id, not null]
+  phone_number varchar [unique, not null]
+  first_name varchar [not null]
+  last_name varchar [not null]
+  middle_name varchar [not null]
+  updated_at timestamptz [not null, default: '0001-01-01 00:00:00Z']
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    id
+    user_id
+  }
+}
+
+Table address_book as AB {
+  id uuid [pk]
+  owner uuid [ref: > UI.id, not null]
+  address_name varchar [not null]
+  address varchar [not null]
+  city varchar [not null]
+  state varchar [not null]
+  zipcode int [not null]
+
+  Indexes {
+    id
+    user
+    (user, address_name) [unique]
+  }
+}

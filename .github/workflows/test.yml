@@ -1,0 +1,53 @@
+name: Run Unit Test
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres:14
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: secret
+          POSTGRES_USER: root
+          POSTGRES_DB: shopping_cart
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: Setup Go environment
+        uses: actions/setup-go@v4.0.1
+        with:
+          # The Go version to download (if necessary) and use. Supports semver spec and ranges.
+          go-version: 1.19
+        id: go
+
+      - name: Checkout code from repository
+        uses: actions/checkout@v3.5.2
+
+      - name: Install golang-migrate
+        run: |
+          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.15.2/migrate.linux-amd64.tar.gz | tar xvz
+          sudo mv migrate /usr/bin/migrate
+          which migrate
+
+      - name: Run migration
+        run: make migrate-up
+
+      - name: Test
+        run: make test
+

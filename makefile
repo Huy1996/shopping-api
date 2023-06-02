@@ -32,4 +32,10 @@ migrate-down-1:
 migrate-create:
 	migrate create -ext sql -dir $(SCHEMA_PATH) -seq $(name)
 
-.PHONY: postgres create-db drop-db migrate-up migrate-up-1 migrate-down migrate-down-1
+sqlc:
+	sqlc generate
+
+test:
+	go test -v -cover -short ./...
+
+.PHONY: postgres create-db drop-db migrate-up migrate-up-1 migrate-down migrate-down-1 sqlc
