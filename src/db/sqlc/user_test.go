@@ -116,3 +116,88 @@ func TestGetUserCredential(t *testing.T) {
 	require.WithinDuration(t, userCredential1.PasswordChangedAt, userCredential2.PasswordChangedAt, time.Second)
 	require.WithinDuration(t, userCredential1.CreatedAt, userCredential2.CreatedAt, time.Second)
 }
+
+func TestGetUserInfo(t *testing.T) {
+	userCredential := CreateRandomUserCredential(t)
+	userInfo1 := CreateRandomUserInfo(t, userCredential)
+	userInfo2, err := testQueries.GetUserInfoByID(context.Background(), userInfo1.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, userInfo2)
+
+	require.Equal(t, userInfo1.ID, userInfo2.ID)
+	require.Equal(t, userInfo1.UserID, userInfo2.UserID)
+	require.Equal(t, userInfo1.FirstName, userInfo2.FirstName)
+	require.Equal(t, userInfo1.MiddleName, userInfo2.MiddleName)
+	require.Equal(t, userInfo1.LastName, userInfo2.LastName)
+	require.Equal(t, userInfo1.PhoneNumber, userInfo2.PhoneNumber)
+
+	require.WithinDuration(t, userInfo1.UpdatedAt, userInfo2.UpdatedAt, time.Second)
+	require.WithinDuration(t, userInfo1.CreatedAt, userInfo2.CreatedAt, time.Second)
+
+	userInfo3, err := testQueries.GetUserInfoByUserID(context.Background(), userCredential.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, userInfo3)
+
+	require.Equal(t, userInfo3.ID, userInfo2.ID)
+	require.Equal(t, userInfo3.UserID, userInfo2.UserID)
+	require.Equal(t, userInfo3.FirstName, userInfo2.FirstName)
+	require.Equal(t, userInfo3.MiddleName, userInfo2.MiddleName)
+	require.Equal(t, userInfo3.LastName, userInfo2.LastName)
+	require.Equal(t, userInfo3.PhoneNumber, userInfo2.PhoneNumber)
+
+	require.WithinDuration(t, userInfo3.UpdatedAt, userInfo2.UpdatedAt, time.Second)
+	require.WithinDuration(t, userInfo3.CreatedAt, userInfo2.CreatedAt, time.Second)
+}
+
+func TestGetUserAddressBook(t *testing.T) {
+	userCredential := CreateRandomUserCredential(t)
+	userInfo := CreateRandomUserInfo(t, userCredential)
+	userAddress1 := CreateRandomUserAddress(t, userInfo)
+	userAddress2, err := testQueries.GetAddress(context.Background(), userAddress1.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, userAddress2)
+
+	require.Equal(t, userAddress1.ID, userAddress2.ID)
+	require.Equal(t, userAddress1.Owner, userAddress2.Owner)
+	require.Equal(t, userAddress1.AddressName, userAddress2.AddressName)
+	require.Equal(t, userAddress1.Address, userAddress2.Address)
+	require.Equal(t, userAddress1.City, userAddress2.City)
+	require.Equal(t, userAddress1.Zipcode, userAddress2.Zipcode)
+
+	require.WithinDuration(t, userAddress1.AddedAt, userAddress2.AddedAt, time.Second)
+}
+
+func TestGetListAddresses(t *testing.T) {
+	userCredential := CreateRandomUserCredential(t)
+	userInfo := CreateRandomUserInfo(t, userCredential)
+
+	var lastAddress AddressBook
+	const numAdr = 10
+	for i := 0; i < numAdr; i++ {
+		lastAddress = CreateRandomUserAddress(t, userInfo)
+	}
+
+	arg := GetListAddressesParams{
+		Owner:  userInfo.ID,
+		Limit:  5,
+		Offset: 0,
+	}
+
+	addressList, err := testQueries.GetListAddresses(context.Background(), arg)
+	require.NoError(t, err)
+	require.NotEmpty(t, addressList)
+
+	require.Equal(t, len(addressList), int(arg.Limit))
+
+	for _, address := range addressList {
+		require.NotEmpty(t, address)
+		require.Equal(t, address.Owner, lastAddress.Owner)
+	}
+
+	count, err := testQueries.GetNumberAddresses(context.Background(), userInfo.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, count)
+
+	require.Equal(t, int64(numAdr), count)
+
+}

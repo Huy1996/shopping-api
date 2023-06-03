@@ -48,6 +48,11 @@ INSERT INTO address_book (
     $1, $2, $3, $4, $5, $6, $7
 ) RETURNING *;
 
+-- name: GetAddress :one
+SELECT * FROM address_book
+WHERE id = $1
+LIMIT 1;
+
 -- name: GetListAddresses :many
 SELECT * FROM address_book
 WHERE owner = $1

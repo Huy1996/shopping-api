@@ -142,6 +142,28 @@ func (q *Queries) CreateUserInfo(ctx context.Context, arg CreateUserInfoParams) 
 	return i, err
 }
 
+const getAddress = `-- name: GetAddress :one
+SELECT id, owner, address_name, address, city, state, zipcode, added_at FROM address_book
+WHERE id = $1
+LIMIT 1
+`
+
+func (q *Queries) GetAddress(ctx context.Context, id uuid.UUID) (AddressBook, error) {
+	row := q.queryRow(ctx, q.getAddressStmt, getAddress, id)
+	var i AddressBook
+	err := row.Scan(
+		&i.ID,
+		&i.Owner,
+		&i.AddressName,
+		&i.Address,
+		&i.City,
+		&i.State,
+		&i.Zipcode,
+		&i.AddedAt,
+	)
+	return i, err
+}
+
 const getListAddresses = `-- name: GetListAddresses :many
 SELECT id, owner, address_name, address, city, state, zipcode, added_at FROM address_book
 WHERE owner = $1

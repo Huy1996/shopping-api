@@ -14,6 +14,7 @@ type Querier interface {
 	CreateAddressBook(ctx context.Context, arg CreateAddressBookParams) (AddressBook, error)
 	CreateUserCredential(ctx context.Context, arg CreateUserCredentialParams) (UserCredential, error)
 	CreateUserInfo(ctx context.Context, arg CreateUserInfoParams) (UserInfo, error)
+	GetAddress(ctx context.Context, id uuid.UUID) (AddressBook, error)
 	GetListAddresses(ctx context.Context, arg GetListAddressesParams) ([]AddressBook, error)
 	GetNumberAddresses(ctx context.Context, owner uuid.UUID) (int64, error)
 	GetUserCredential(ctx context.Context, username string) (UserCredential, error)
