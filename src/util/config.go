@@ -6,6 +6,7 @@ type Config struct {
 	Environment string `mapstructure:"ENVIRONMENT"`
 	DBSource    string `mapstructure:"DB_SOURCE"`
 	DBEngine    string `mapstructure:"DB_ENGINE"`
+	HTTPAddress string `mapstructure:"HTTP_SERVER_ADDRESS"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
