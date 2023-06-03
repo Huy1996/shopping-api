@@ -11,11 +11,11 @@ import (
 )
 
 type Querier interface {
-	CreateAddressBook(ctx context.Context, arg CreateAddressBookParams) (AddressBook, error)
+	CreateUserAddress(ctx context.Context, arg CreateUserAddressParams) (UserAddress, error)
 	CreateUserCredential(ctx context.Context, arg CreateUserCredentialParams) (UserCredential, error)
 	CreateUserInfo(ctx context.Context, arg CreateUserInfoParams) (UserInfo, error)
-	GetAddress(ctx context.Context, id uuid.UUID) (AddressBook, error)
-	GetListAddresses(ctx context.Context, arg GetListAddressesParams) ([]AddressBook, error)
+	GetAddress(ctx context.Context, id uuid.UUID) (UserAddress, error)
+	GetListAddresses(ctx context.Context, arg GetListAddressesParams) ([]UserAddress, error)
 	GetNumberAddresses(ctx context.Context, owner uuid.UUID) (int64, error)
 	GetUserCredential(ctx context.Context, username string) (UserCredential, error)
 	GetUserInfoByID(ctx context.Context, id uuid.UUID) (UserInfo, error)

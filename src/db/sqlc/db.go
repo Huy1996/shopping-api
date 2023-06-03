@@ -24,8 +24,8 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
-	if q.createAddressBookStmt, err = db.PrepareContext(ctx, createAddressBook); err != nil {
-		return nil, fmt.Errorf("error preparing query CreateAddressBook: %w", err)
+	if q.createUserAddressStmt, err = db.PrepareContext(ctx, createUserAddress); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateUserAddress: %w", err)
 	}
 	if q.createUserCredentialStmt, err = db.PrepareContext(ctx, createUserCredential); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateUserCredential: %w", err)
@@ -56,9 +56,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
-	if q.createAddressBookStmt != nil {
-		if cerr := q.createAddressBookStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing createAddressBookStmt: %w", cerr)
+	if q.createUserAddressStmt != nil {
+		if cerr := q.createUserAddressStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createUserAddressStmt: %w", cerr)
 		}
 	}
 	if q.createUserCredentialStmt != nil {
@@ -140,7 +140,7 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 type Queries struct {
 	db                       DBTX
 	tx                       *sql.Tx
-	createAddressBookStmt    *sql.Stmt
+	createUserAddressStmt    *sql.Stmt
 	createUserCredentialStmt *sql.Stmt
 	createUserInfoStmt       *sql.Stmt
 	getAddressStmt           *sql.Stmt
@@ -155,7 +155,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
 		db:                       tx,
 		tx:                       tx,
-		createAddressBookStmt:    q.createAddressBookStmt,
+		createUserAddressStmt:    q.createUserAddressStmt,
 		createUserCredentialStmt: q.createUserCredentialStmt,
 		createUserInfoStmt:       q.createUserInfoStmt,
 		getAddressStmt:           q.getAddressStmt,

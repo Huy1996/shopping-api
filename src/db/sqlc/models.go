@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type AddressBook struct {
+type UserAddress struct {
 	ID          uuid.UUID `json:"id"`
 	Owner       uuid.UUID `json:"owner"`
 	AddressName string    `json:"address_name"`
@@ -18,7 +18,7 @@ type AddressBook struct {
 	City        string    `json:"city"`
 	State       string    `json:"state"`
 	Zipcode     int32     `json:"zipcode"`
-	AddedAt     time.Time `json:"added_at"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type UserCredential struct {

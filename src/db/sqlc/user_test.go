@@ -70,12 +70,12 @@ func CreateRandomUserInfo(t *testing.T, uc UserCredential) UserInfo {
 	return userInfo
 }
 
-func CreateRandomUserAddress(t *testing.T, ui UserInfo) AddressBook {
+func CreateRandomUserAddress(t *testing.T, ui UserInfo) UserAddress {
 	id, err := uuid.NewRandom()
 	require.NoError(t, err)
 	require.NotEmpty(t, id)
 
-	arg := CreateAddressBookParams{
+	arg := CreateUserAddressParams{
 		ID:          id,
 		Owner:       ui.ID,
 		AddressName: util.RandomName(),
@@ -85,7 +85,7 @@ func CreateRandomUserAddress(t *testing.T, ui UserInfo) AddressBook {
 		Zipcode:     int32(util.RandomInt(0, 99999)),
 	}
 
-	addressBook, err := testQueries.CreateAddressBook(context.Background(), arg)
+	addressBook, err := testQueries.CreateUserAddress(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, addressBook)
 
@@ -97,7 +97,7 @@ func CreateRandomUserAddress(t *testing.T, ui UserInfo) AddressBook {
 	require.Equal(t, arg.State, addressBook.State)
 	require.Equal(t, arg.Zipcode, addressBook.Zipcode)
 
-	require.NotZero(t, addressBook.AddedAt)
+	require.NotZero(t, addressBook.CreatedAt)
 	return addressBook
 }
 
@@ -164,14 +164,14 @@ func TestGetUserAddressBook(t *testing.T) {
 	require.Equal(t, userAddress1.City, userAddress2.City)
 	require.Equal(t, userAddress1.Zipcode, userAddress2.Zipcode)
 
-	require.WithinDuration(t, userAddress1.AddedAt, userAddress2.AddedAt, time.Second)
+	require.WithinDuration(t, userAddress1.CreatedAt, userAddress2.CreatedAt, time.Second)
 }
 
 func TestGetListAddresses(t *testing.T) {
 	userCredential := CreateRandomUserCredential(t)
 	userInfo := CreateRandomUserInfo(t, userCredential)
 
-	var lastAddress AddressBook
+	var lastAddress UserAddress
 	const numAdr = 10
 	for i := 0; i < numAdr; i++ {
 		lastAddress = CreateRandomUserAddress(t, userInfo)

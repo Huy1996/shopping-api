@@ -19,7 +19,7 @@ CREATE TABLE "user_info" (
     "created_at" timestamptz NOT NULL DEFAULT (now())
 );
 
-CREATE TABLE "address_book" (
+CREATE TABLE "user_address" (
     "id" uuid PRIMARY KEY,
     owner uuid NOT NULL,
     "address_name" varchar NOT NULL,
@@ -27,19 +27,19 @@ CREATE TABLE "address_book" (
     "city" varchar NOT NULL,
     "state" varchar NOT NULL,
     "zipcode" int NOT NULL,
-    "added_at" timestamptz NOT NULL DEFAULT (now())
+    "created_at" timestamptz NOT NULL DEFAULT (now())
 );
 
 CREATE INDEX ON "user_info" ("id");
 
 CREATE INDEX ON "user_info" ("user_id");
 
-CREATE INDEX ON "address_book" ("id");
+CREATE INDEX ON "user_address" ("id");
 
-CREATE INDEX ON "address_book" ("owner");
+CREATE INDEX ON "user_address" ("owner");
 
-CREATE UNIQUE INDEX ON "address_book" ("owner", "address_name");
+CREATE UNIQUE INDEX ON "user_address" ("owner", "address_name");
 
 ALTER TABLE "user_info" ADD FOREIGN KEY ("user_id") REFERENCES "user_credential" ("id");
 
-ALTER TABLE "address_book" ADD FOREIGN KEY ("owner") REFERENCES "user_info" ("id");
+ALTER TABLE "user_address" ADD FOREIGN KEY ("owner") REFERENCES "user_info" ("id");
