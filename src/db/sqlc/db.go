@@ -33,6 +33,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createUserInfoStmt, err = db.PrepareContext(ctx, createUserInfo); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateUserInfo: %w", err)
 	}
+	if q.getAddressStmt, err = db.PrepareContext(ctx, getAddress); err != nil {
+		return nil, fmt.Errorf("error preparing query GetAddress: %w", err)
+	}
 	if q.getListAddressesStmt, err = db.PrepareContext(ctx, getListAddresses); err != nil {
 		return nil, fmt.Errorf("error preparing query GetListAddresses: %w", err)
 	}
@@ -66,6 +69,11 @@ func (q *Queries) Close() error {
 	if q.createUserInfoStmt != nil {
 		if cerr := q.createUserInfoStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createUserInfoStmt: %w", cerr)
+		}
+	}
+	if q.getAddressStmt != nil {
+		if cerr := q.getAddressStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getAddressStmt: %w", cerr)
 		}
 	}
 	if q.getListAddressesStmt != nil {
@@ -135,6 +143,7 @@ type Queries struct {
 	createAddressBookStmt    *sql.Stmt
 	createUserCredentialStmt *sql.Stmt
 	createUserInfoStmt       *sql.Stmt
+	getAddressStmt           *sql.Stmt
 	getListAddressesStmt     *sql.Stmt
 	getNumberAddressesStmt   *sql.Stmt
 	getUserCredentialStmt    *sql.Stmt
@@ -149,6 +158,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		createAddressBookStmt:    q.createAddressBookStmt,
 		createUserCredentialStmt: q.createUserCredentialStmt,
 		createUserInfoStmt:       q.createUserInfoStmt,
+		getAddressStmt:           q.getAddressStmt,
 		getListAddressesStmt:     q.getListAddressesStmt,
 		getNumberAddressesStmt:   q.getNumberAddressesStmt,
 		getUserCredentialStmt:    q.getUserCredentialStmt,
