@@ -24,6 +24,21 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
+	if q.addDiscountStmt, err = db.PrepareContext(ctx, addDiscount); err != nil {
+		return nil, fmt.Errorf("error preparing query AddDiscount: %w", err)
+	}
+	if q.createCategoryStmt, err = db.PrepareContext(ctx, createCategory); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateCategory: %w", err)
+	}
+	if q.createProductStmt, err = db.PrepareContext(ctx, createProduct); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateProduct: %w", err)
+	}
+	if q.createProductDiscountStmt, err = db.PrepareContext(ctx, createProductDiscount); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateProductDiscount: %w", err)
+	}
+	if q.createProductInventoryStmt, err = db.PrepareContext(ctx, createProductInventory); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateProductInventory: %w", err)
+	}
 	if q.createUserAddressStmt, err = db.PrepareContext(ctx, createUserAddress); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateUserAddress: %w", err)
 	}
@@ -36,8 +51,14 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getAddressStmt, err = db.PrepareContext(ctx, getAddress); err != nil {
 		return nil, fmt.Errorf("error preparing query GetAddress: %w", err)
 	}
+	if q.getCategoryForUpdateStmt, err = db.PrepareContext(ctx, getCategoryForUpdate); err != nil {
+		return nil, fmt.Errorf("error preparing query GetCategoryForUpdate: %w", err)
+	}
 	if q.getListAddressesStmt, err = db.PrepareContext(ctx, getListAddresses); err != nil {
 		return nil, fmt.Errorf("error preparing query GetListAddresses: %w", err)
+	}
+	if q.getListCategoriesStmt, err = db.PrepareContext(ctx, getListCategories); err != nil {
+		return nil, fmt.Errorf("error preparing query GetListCategories: %w", err)
 	}
 	if q.getNumberAddressesStmt, err = db.PrepareContext(ctx, getNumberAddresses); err != nil {
 		return nil, fmt.Errorf("error preparing query GetNumberAddresses: %w", err)
@@ -51,11 +72,48 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getUserInfoByUserIDStmt, err = db.PrepareContext(ctx, getUserInfoByUserID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserInfoByUserID: %w", err)
 	}
+	if q.removeDiscountStmt, err = db.PrepareContext(ctx, removeDiscount); err != nil {
+		return nil, fmt.Errorf("error preparing query RemoveDiscount: %w", err)
+	}
+	if q.updateCategoryStmt, err = db.PrepareContext(ctx, updateCategory); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateCategory: %w", err)
+	}
+	if q.updateDiscountStmt, err = db.PrepareContext(ctx, updateDiscount); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateDiscount: %w", err)
+	}
+	if q.updateProductInventoryStmt, err = db.PrepareContext(ctx, updateProductInventory); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateProductInventory: %w", err)
+	}
 	return &q, nil
 }
 
 func (q *Queries) Close() error {
 	var err error
+	if q.addDiscountStmt != nil {
+		if cerr := q.addDiscountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing addDiscountStmt: %w", cerr)
+		}
+	}
+	if q.createCategoryStmt != nil {
+		if cerr := q.createCategoryStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createCategoryStmt: %w", cerr)
+		}
+	}
+	if q.createProductStmt != nil {
+		if cerr := q.createProductStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createProductStmt: %w", cerr)
+		}
+	}
+	if q.createProductDiscountStmt != nil {
+		if cerr := q.createProductDiscountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createProductDiscountStmt: %w", cerr)
+		}
+	}
+	if q.createProductInventoryStmt != nil {
+		if cerr := q.createProductInventoryStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createProductInventoryStmt: %w", cerr)
+		}
+	}
 	if q.createUserAddressStmt != nil {
 		if cerr := q.createUserAddressStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createUserAddressStmt: %w", cerr)
@@ -76,9 +134,19 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getAddressStmt: %w", cerr)
 		}
 	}
+	if q.getCategoryForUpdateStmt != nil {
+		if cerr := q.getCategoryForUpdateStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getCategoryForUpdateStmt: %w", cerr)
+		}
+	}
 	if q.getListAddressesStmt != nil {
 		if cerr := q.getListAddressesStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getListAddressesStmt: %w", cerr)
+		}
+	}
+	if q.getListCategoriesStmt != nil {
+		if cerr := q.getListCategoriesStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getListCategoriesStmt: %w", cerr)
 		}
 	}
 	if q.getNumberAddressesStmt != nil {
@@ -99,6 +167,26 @@ func (q *Queries) Close() error {
 	if q.getUserInfoByUserIDStmt != nil {
 		if cerr := q.getUserInfoByUserIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getUserInfoByUserIDStmt: %w", cerr)
+		}
+	}
+	if q.removeDiscountStmt != nil {
+		if cerr := q.removeDiscountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing removeDiscountStmt: %w", cerr)
+		}
+	}
+	if q.updateCategoryStmt != nil {
+		if cerr := q.updateCategoryStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateCategoryStmt: %w", cerr)
+		}
+	}
+	if q.updateDiscountStmt != nil {
+		if cerr := q.updateDiscountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateDiscountStmt: %w", cerr)
+		}
+	}
+	if q.updateProductInventoryStmt != nil {
+		if cerr := q.updateProductInventoryStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateProductInventoryStmt: %w", cerr)
 		}
 	}
 	return err
@@ -138,31 +226,53 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                       DBTX
-	tx                       *sql.Tx
-	createUserAddressStmt    *sql.Stmt
-	createUserCredentialStmt *sql.Stmt
-	createUserInfoStmt       *sql.Stmt
-	getAddressStmt           *sql.Stmt
-	getListAddressesStmt     *sql.Stmt
-	getNumberAddressesStmt   *sql.Stmt
-	getUserCredentialStmt    *sql.Stmt
-	getUserInfoByIDStmt      *sql.Stmt
-	getUserInfoByUserIDStmt  *sql.Stmt
+	db                         DBTX
+	tx                         *sql.Tx
+	addDiscountStmt            *sql.Stmt
+	createCategoryStmt         *sql.Stmt
+	createProductStmt          *sql.Stmt
+	createProductDiscountStmt  *sql.Stmt
+	createProductInventoryStmt *sql.Stmt
+	createUserAddressStmt      *sql.Stmt
+	createUserCredentialStmt   *sql.Stmt
+	createUserInfoStmt         *sql.Stmt
+	getAddressStmt             *sql.Stmt
+	getCategoryForUpdateStmt   *sql.Stmt
+	getListAddressesStmt       *sql.Stmt
+	getListCategoriesStmt      *sql.Stmt
+	getNumberAddressesStmt     *sql.Stmt
+	getUserCredentialStmt      *sql.Stmt
+	getUserInfoByIDStmt        *sql.Stmt
+	getUserInfoByUserIDStmt    *sql.Stmt
+	removeDiscountStmt         *sql.Stmt
+	updateCategoryStmt         *sql.Stmt
+	updateDiscountStmt         *sql.Stmt
+	updateProductInventoryStmt *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                       tx,
-		tx:                       tx,
-		createUserAddressStmt:    q.createUserAddressStmt,
-		createUserCredentialStmt: q.createUserCredentialStmt,
-		createUserInfoStmt:       q.createUserInfoStmt,
-		getAddressStmt:           q.getAddressStmt,
-		getListAddressesStmt:     q.getListAddressesStmt,
-		getNumberAddressesStmt:   q.getNumberAddressesStmt,
-		getUserCredentialStmt:    q.getUserCredentialStmt,
-		getUserInfoByIDStmt:      q.getUserInfoByIDStmt,
-		getUserInfoByUserIDStmt:  q.getUserInfoByUserIDStmt,
+		db:                         tx,
+		tx:                         tx,
+		addDiscountStmt:            q.addDiscountStmt,
+		createCategoryStmt:         q.createCategoryStmt,
+		createProductStmt:          q.createProductStmt,
+		createProductDiscountStmt:  q.createProductDiscountStmt,
+		createProductInventoryStmt: q.createProductInventoryStmt,
+		createUserAddressStmt:      q.createUserAddressStmt,
+		createUserCredentialStmt:   q.createUserCredentialStmt,
+		createUserInfoStmt:         q.createUserInfoStmt,
+		getAddressStmt:             q.getAddressStmt,
+		getCategoryForUpdateStmt:   q.getCategoryForUpdateStmt,
+		getListAddressesStmt:       q.getListAddressesStmt,
+		getListCategoriesStmt:      q.getListCategoriesStmt,
+		getNumberAddressesStmt:     q.getNumberAddressesStmt,
+		getUserCredentialStmt:      q.getUserCredentialStmt,
+		getUserInfoByIDStmt:        q.getUserInfoByIDStmt,
+		getUserInfoByUserIDStmt:    q.getUserInfoByUserIDStmt,
+		removeDiscountStmt:         q.removeDiscountStmt,
+		updateCategoryStmt:         q.updateCategoryStmt,
+		updateDiscountStmt:         q.updateDiscountStmt,
+		updateProductInventoryStmt: q.updateProductInventoryStmt,
 	}
 }

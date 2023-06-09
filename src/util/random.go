@@ -42,6 +42,10 @@ func RandomPhoneNumber() string {
 	return strconv.FormatInt(number, 10)
 }
 
+func RandomFloat(min, max float64) string {
+	return strconv.FormatFloat(min+random.Float64()*(max-min), 'f', 2, 32)
+}
+
 func RandomCity() string {
 	cities := []string{SJ, SF, MV, GR}
 	n := len(cities)

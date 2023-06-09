@@ -30,7 +30,7 @@ CREATE TABLE "product_inventory" (
 
 CREATE TABLE "product_category" (
   "id" uuid PRIMARY KEY,
-  "name" varchar NOT NULL,
+  "name" varchar NOT NULL UNIQUE ,
   "description" text NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "updated_at" timestamptz NOT NULL DEFAULT '0001-01-01 00:00:00Z'

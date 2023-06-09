@@ -11,15 +11,26 @@ import (
 )
 
 type Querier interface {
+	AddDiscount(ctx context.Context, arg AddDiscountParams) (Product, error)
+	CreateCategory(ctx context.Context, arg CreateCategoryParams) (ProductCategory, error)
+	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
+	CreateProductDiscount(ctx context.Context, arg CreateProductDiscountParams) (ProductDiscount, error)
+	CreateProductInventory(ctx context.Context, arg CreateProductInventoryParams) (ProductInventory, error)
 	CreateUserAddress(ctx context.Context, arg CreateUserAddressParams) (UserAddress, error)
 	CreateUserCredential(ctx context.Context, arg CreateUserCredentialParams) (UserCredential, error)
 	CreateUserInfo(ctx context.Context, arg CreateUserInfoParams) (UserInfo, error)
 	GetAddress(ctx context.Context, id uuid.UUID) (UserAddress, error)
+	GetCategoryForUpdate(ctx context.Context, id uuid.UUID) (ProductCategory, error)
 	GetListAddresses(ctx context.Context, arg GetListAddressesParams) ([]UserAddress, error)
+	GetListCategories(ctx context.Context) ([]ProductCategory, error)
 	GetNumberAddresses(ctx context.Context, owner uuid.UUID) (int64, error)
 	GetUserCredential(ctx context.Context, username string) (UserCredential, error)
 	GetUserInfoByID(ctx context.Context, id uuid.UUID) (UserInfo, error)
 	GetUserInfoByUserID(ctx context.Context, userID uuid.UUID) (UserInfo, error)
+	RemoveDiscount(ctx context.Context, id uuid.UUID) (Product, error)
+	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (ProductCategory, error)
+	UpdateDiscount(ctx context.Context, arg UpdateDiscountParams) (ProductDiscount, error)
+	UpdateProductInventory(ctx context.Context, arg UpdateProductInventoryParams) (ProductInventory, error)
 }
 
 var _ Querier = (*Queries)(nil)

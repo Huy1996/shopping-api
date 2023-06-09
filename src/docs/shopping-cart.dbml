@@ -79,7 +79,7 @@ Table product_inventory as PI {
 
 Table product_category as PC {
   id uuid [pk]
-  name varchar [not null]
+  name varchar [not null, unique]
   description text [not null]
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: '0001-01-01 00:00:00Z']
