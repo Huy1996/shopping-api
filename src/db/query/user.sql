@@ -35,8 +35,8 @@ SELECT * FROM user_info
 WHERE user_id = $1
 LIMIT 1;
 
--- name: CreateAddressBook :one
-INSERT INTO address_book (
+-- name: CreateUserAddress :one
+INSERT INTO user_address (
     id,
     owner,
     address_name,
@@ -49,18 +49,18 @@ INSERT INTO address_book (
 ) RETURNING *;
 
 -- name: GetAddress :one
-SELECT * FROM address_book
+SELECT * FROM user_address
 WHERE id = $1
 LIMIT 1;
 
 -- name: GetListAddresses :many
-SELECT * FROM address_book
+SELECT * FROM user_address
 WHERE owner = $1
 ORDER BY id
 LIMIT $2
 OFFSET $3;
 
 -- name: GetNumberAddresses :one
-SELECT COUNT(*) FROM address_book
+SELECT COUNT(*) FROM user_address
 WHERE owner = $1
 LIMIT 1;

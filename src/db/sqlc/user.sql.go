@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 )
 
-const createAddressBook = `-- name: CreateAddressBook :one
-INSERT INTO address_book (
+const createUserAddress = `-- name: CreateUserAddress :one
+INSERT INTO user_address (
     id,
     owner,
     address_name,
@@ -22,10 +22,10 @@ INSERT INTO address_book (
     zipcode
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7
-) RETURNING id, owner, address_name, address, city, state, zipcode, added_at
+) RETURNING id, owner, address_name, address, city, state, zipcode, created_at
 `
 
-type CreateAddressBookParams struct {
+type CreateUserAddressParams struct {
 	ID          uuid.UUID `json:"id"`
 	Owner       uuid.UUID `json:"owner"`
 	AddressName string    `json:"address_name"`
@@ -35,8 +35,8 @@ type CreateAddressBookParams struct {
 	Zipcode     int32     `json:"zipcode"`
 }
 
-func (q *Queries) CreateAddressBook(ctx context.Context, arg CreateAddressBookParams) (AddressBook, error) {
-	row := q.queryRow(ctx, q.createAddressBookStmt, createAddressBook,
+func (q *Queries) CreateUserAddress(ctx context.Context, arg CreateUserAddressParams) (UserAddress, error) {
+	row := q.queryRow(ctx, q.createUserAddressStmt, createUserAddress,
 		arg.ID,
 		arg.Owner,
 		arg.AddressName,
@@ -45,7 +45,7 @@ func (q *Queries) CreateAddressBook(ctx context.Context, arg CreateAddressBookPa
 		arg.State,
 		arg.Zipcode,
 	)
-	var i AddressBook
+	var i UserAddress
 	err := row.Scan(
 		&i.ID,
 		&i.Owner,
@@ -54,7 +54,7 @@ func (q *Queries) CreateAddressBook(ctx context.Context, arg CreateAddressBookPa
 		&i.City,
 		&i.State,
 		&i.Zipcode,
-		&i.AddedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -143,14 +143,14 @@ func (q *Queries) CreateUserInfo(ctx context.Context, arg CreateUserInfoParams) 
 }
 
 const getAddress = `-- name: GetAddress :one
-SELECT id, owner, address_name, address, city, state, zipcode, added_at FROM address_book
+SELECT id, owner, address_name, address, city, state, zipcode, created_at FROM user_address
 WHERE id = $1
 LIMIT 1
 `
 
-func (q *Queries) GetAddress(ctx context.Context, id uuid.UUID) (AddressBook, error) {
+func (q *Queries) GetAddress(ctx context.Context, id uuid.UUID) (UserAddress, error) {
 	row := q.queryRow(ctx, q.getAddressStmt, getAddress, id)
-	var i AddressBook
+	var i UserAddress
 	err := row.Scan(
 		&i.ID,
 		&i.Owner,
@@ -159,13 +159,13 @@ func (q *Queries) GetAddress(ctx context.Context, id uuid.UUID) (AddressBook, er
 		&i.City,
 		&i.State,
 		&i.Zipcode,
-		&i.AddedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getListAddresses = `-- name: GetListAddresses :many
-SELECT id, owner, address_name, address, city, state, zipcode, added_at FROM address_book
+SELECT id, owner, address_name, address, city, state, zipcode, created_at FROM user_address
 WHERE owner = $1
 ORDER BY id
 LIMIT $2
@@ -178,15 +178,15 @@ type GetListAddressesParams struct {
 	Offset int32     `json:"offset"`
 }
 
-func (q *Queries) GetListAddresses(ctx context.Context, arg GetListAddressesParams) ([]AddressBook, error) {
+func (q *Queries) GetListAddresses(ctx context.Context, arg GetListAddressesParams) ([]UserAddress, error) {
 	rows, err := q.query(ctx, q.getListAddressesStmt, getListAddresses, arg.Owner, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []AddressBook{}
+	items := []UserAddress{}
 	for rows.Next() {
-		var i AddressBook
+		var i UserAddress
 		if err := rows.Scan(
 			&i.ID,
 			&i.Owner,
@@ -195,7 +195,7 @@ func (q *Queries) GetListAddresses(ctx context.Context, arg GetListAddressesPara
 			&i.City,
 			&i.State,
 			&i.Zipcode,
-			&i.AddedAt,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -211,7 +211,7 @@ func (q *Queries) GetListAddresses(ctx context.Context, arg GetListAddressesPara
 }
 
 const getNumberAddresses = `-- name: GetNumberAddresses :one
-SELECT COUNT(*) FROM address_book
+SELECT COUNT(*) FROM user_address
 WHERE owner = $1
 LIMIT 1
 `

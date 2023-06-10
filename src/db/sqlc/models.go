@@ -10,7 +10,52 @@ import (
 	"github.com/google/uuid"
 )
 
-type AddressBook struct {
+type CartItem struct {
+	ID        uuid.UUID `json:"id"`
+	CartID    uuid.UUID `json:"cart_id"`
+	ProductID uuid.UUID `json:"product_id"`
+	// Cannot be less than 1
+	Quantity int32 `json:"quantity"`
+}
+
+type Product struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	SKU         string    `json:"SKU"`
+	// Cannot be negative
+	Price       string        `json:"price"`
+	CategoryID  uuid.UUID     `json:"category_id"`
+	InventoryID uuid.UUID     `json:"inventory_id"`
+	DiscountID  uuid.NullUUID `json:"discount_id"`
+}
+
+type ProductCategory struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type ProductDiscount struct {
+	ID              uuid.UUID `json:"id"`
+	Name            string    `json:"name"`
+	Description     string    `json:"description"`
+	DiscountPercent string    `json:"discount_percent"`
+	Active          bool      `json:"active"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+type ProductInventory struct {
+	ID        uuid.UUID `json:"id"`
+	Quantity  int32     `json:"quantity"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type UserAddress struct {
 	ID          uuid.UUID `json:"id"`
 	Owner       uuid.UUID `json:"owner"`
 	AddressName string    `json:"address_name"`
@@ -18,7 +63,12 @@ type AddressBook struct {
 	City        string    `json:"city"`
 	State       string    `json:"state"`
 	Zipcode     int32     `json:"zipcode"`
-	AddedAt     time.Time `json:"added_at"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type UserCart struct {
+	ID    uuid.UUID `json:"id"`
+	Owner uuid.UUID `json:"owner"`
 }
 
 type UserCredential struct {
