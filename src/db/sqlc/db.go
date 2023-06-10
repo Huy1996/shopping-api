@@ -51,8 +51,17 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getAddressStmt, err = db.PrepareContext(ctx, getAddress); err != nil {
 		return nil, fmt.Errorf("error preparing query GetAddress: %w", err)
 	}
+	if q.getCategoryDetailStmt, err = db.PrepareContext(ctx, getCategoryDetail); err != nil {
+		return nil, fmt.Errorf("error preparing query GetCategoryDetail: %w", err)
+	}
 	if q.getCategoryForUpdateStmt, err = db.PrepareContext(ctx, getCategoryForUpdate); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCategoryForUpdate: %w", err)
+	}
+	if q.getDiscountDetailStmt, err = db.PrepareContext(ctx, getDiscountDetail); err != nil {
+		return nil, fmt.Errorf("error preparing query GetDiscountDetail: %w", err)
+	}
+	if q.getInventoryDetailStmt, err = db.PrepareContext(ctx, getInventoryDetail); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInventoryDetail: %w", err)
 	}
 	if q.getListAddressesStmt, err = db.PrepareContext(ctx, getListAddresses); err != nil {
 		return nil, fmt.Errorf("error preparing query GetListAddresses: %w", err)
@@ -62,6 +71,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.getNumberAddressesStmt, err = db.PrepareContext(ctx, getNumberAddresses); err != nil {
 		return nil, fmt.Errorf("error preparing query GetNumberAddresses: %w", err)
+	}
+	if q.getProductDetailStmt, err = db.PrepareContext(ctx, getProductDetail); err != nil {
+		return nil, fmt.Errorf("error preparing query GetProductDetail: %w", err)
+	}
+	if q.getProductListStmt, err = db.PrepareContext(ctx, getProductList); err != nil {
+		return nil, fmt.Errorf("error preparing query GetProductList: %w", err)
 	}
 	if q.getUserCredentialStmt, err = db.PrepareContext(ctx, getUserCredential); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserCredential: %w", err)
@@ -134,9 +149,24 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getAddressStmt: %w", cerr)
 		}
 	}
+	if q.getCategoryDetailStmt != nil {
+		if cerr := q.getCategoryDetailStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getCategoryDetailStmt: %w", cerr)
+		}
+	}
 	if q.getCategoryForUpdateStmt != nil {
 		if cerr := q.getCategoryForUpdateStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getCategoryForUpdateStmt: %w", cerr)
+		}
+	}
+	if q.getDiscountDetailStmt != nil {
+		if cerr := q.getDiscountDetailStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getDiscountDetailStmt: %w", cerr)
+		}
+	}
+	if q.getInventoryDetailStmt != nil {
+		if cerr := q.getInventoryDetailStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInventoryDetailStmt: %w", cerr)
 		}
 	}
 	if q.getListAddressesStmt != nil {
@@ -152,6 +182,16 @@ func (q *Queries) Close() error {
 	if q.getNumberAddressesStmt != nil {
 		if cerr := q.getNumberAddressesStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getNumberAddressesStmt: %w", cerr)
+		}
+	}
+	if q.getProductDetailStmt != nil {
+		if cerr := q.getProductDetailStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getProductDetailStmt: %w", cerr)
+		}
+	}
+	if q.getProductListStmt != nil {
+		if cerr := q.getProductListStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getProductListStmt: %w", cerr)
 		}
 	}
 	if q.getUserCredentialStmt != nil {
@@ -237,10 +277,15 @@ type Queries struct {
 	createUserCredentialStmt   *sql.Stmt
 	createUserInfoStmt         *sql.Stmt
 	getAddressStmt             *sql.Stmt
+	getCategoryDetailStmt      *sql.Stmt
 	getCategoryForUpdateStmt   *sql.Stmt
+	getDiscountDetailStmt      *sql.Stmt
+	getInventoryDetailStmt     *sql.Stmt
 	getListAddressesStmt       *sql.Stmt
 	getListCategoriesStmt      *sql.Stmt
 	getNumberAddressesStmt     *sql.Stmt
+	getProductDetailStmt       *sql.Stmt
+	getProductListStmt         *sql.Stmt
 	getUserCredentialStmt      *sql.Stmt
 	getUserInfoByIDStmt        *sql.Stmt
 	getUserInfoByUserIDStmt    *sql.Stmt
@@ -263,10 +308,15 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		createUserCredentialStmt:   q.createUserCredentialStmt,
 		createUserInfoStmt:         q.createUserInfoStmt,
 		getAddressStmt:             q.getAddressStmt,
+		getCategoryDetailStmt:      q.getCategoryDetailStmt,
 		getCategoryForUpdateStmt:   q.getCategoryForUpdateStmt,
+		getDiscountDetailStmt:      q.getDiscountDetailStmt,
+		getInventoryDetailStmt:     q.getInventoryDetailStmt,
 		getListAddressesStmt:       q.getListAddressesStmt,
 		getListCategoriesStmt:      q.getListCategoriesStmt,
 		getNumberAddressesStmt:     q.getNumberAddressesStmt,
+		getProductDetailStmt:       q.getProductDetailStmt,
+		getProductListStmt:         q.getProductListStmt,
 		getUserCredentialStmt:      q.getUserCredentialStmt,
 		getUserInfoByIDStmt:        q.getUserInfoByIDStmt,
 		getUserInfoByUserIDStmt:    q.getUserInfoByUserIDStmt,

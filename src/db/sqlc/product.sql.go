@@ -181,6 +181,25 @@ func (q *Queries) CreateProductInventory(ctx context.Context, arg CreateProductI
 	return i, err
 }
 
+const getCategoryDetail = `-- name: GetCategoryDetail :one
+SELECT id, name, description, created_at, updated_at FROM product_category
+WHERE id = $1
+LIMIT 1
+`
+
+func (q *Queries) GetCategoryDetail(ctx context.Context, id uuid.UUID) (ProductCategory, error) {
+	row := q.queryRow(ctx, q.getCategoryDetailStmt, getCategoryDetail, id)
+	var i ProductCategory
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getCategoryForUpdate = `-- name: GetCategoryForUpdate :one
 SELECT id, name, description, created_at, updated_at FROM product_category
 WHERE id = $1
@@ -195,6 +214,45 @@ func (q *Queries) GetCategoryForUpdate(ctx context.Context, id uuid.UUID) (Produ
 		&i.ID,
 		&i.Name,
 		&i.Description,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getDiscountDetail = `-- name: GetDiscountDetail :one
+SELECT id, name, description, discount_percent, active, created_at, updated_at FROM product_discount
+WHERE id = $1
+LIMIT 1
+`
+
+func (q *Queries) GetDiscountDetail(ctx context.Context, id uuid.UUID) (ProductDiscount, error) {
+	row := q.queryRow(ctx, q.getDiscountDetailStmt, getDiscountDetail, id)
+	var i ProductDiscount
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.DiscountPercent,
+		&i.Active,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getInventoryDetail = `-- name: GetInventoryDetail :one
+SELECT id, quantity, created_at, updated_at FROM product_inventory
+WHERE id = $1
+LIMIT 1
+`
+
+func (q *Queries) GetInventoryDetail(ctx context.Context, id uuid.UUID) (ProductInventory, error) {
+	row := q.queryRow(ctx, q.getInventoryDetailStmt, getInventoryDetail, id)
+	var i ProductInventory
+	err := row.Scan(
+		&i.ID,
+		&i.Quantity,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -220,6 +278,104 @@ func (q *Queries) GetListCategories(ctx context.Context) ([]ProductCategory, err
 			&i.Description,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getProductDetail = `-- name: GetProductDetail :one
+SELECT
+    product.id,
+	product.name,
+	product.price,
+	product."SKU",
+	product.description,
+	product_category.name AS category,
+	product_category.description AS category_description,
+	product_discount.name AS discount_name,
+	product_discount.discount_percent AS discount_percent,
+	product_discount.description AS discount_description,
+	product_inventory.quantity AS quantity
+FROM product
+LEFT JOIN product_discount ON product.discount_id = product_discount.id
+LEFT JOIN product_inventory ON product.inventory_id = product_inventory.id
+LEFT JOIN product_category ON product.category_id = product_category.id
+WHERE product.id = $1
+LIMIT 1
+`
+
+type GetProductDetailRow struct {
+	ID                  uuid.UUID      `json:"id"`
+	Name                string         `json:"name"`
+	Price               string         `json:"price"`
+	SKU                 string         `json:"SKU"`
+	Description         string         `json:"description"`
+	Category            sql.NullString `json:"category"`
+	CategoryDescription sql.NullString `json:"category_description"`
+	DiscountName        sql.NullString `json:"discount_name"`
+	DiscountPercent     sql.NullString `json:"discount_percent"`
+	DiscountDescription sql.NullString `json:"discount_description"`
+	Quantity            sql.NullInt32  `json:"quantity"`
+}
+
+func (q *Queries) GetProductDetail(ctx context.Context, id uuid.UUID) (GetProductDetailRow, error) {
+	row := q.queryRow(ctx, q.getProductDetailStmt, getProductDetail, id)
+	var i GetProductDetailRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Price,
+		&i.SKU,
+		&i.Description,
+		&i.Category,
+		&i.CategoryDescription,
+		&i.DiscountName,
+		&i.DiscountPercent,
+		&i.DiscountDescription,
+		&i.Quantity,
+	)
+	return i, err
+}
+
+const getProductList = `-- name: GetProductList :many
+SELECT id, name, description, "SKU", price, category_id, inventory_id, discount_id FROM product
+ORDER BY id
+LIMIT $1
+OFFSET $2
+`
+
+type GetProductListParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) GetProductList(ctx context.Context, arg GetProductListParams) ([]Product, error) {
+	rows, err := q.query(ctx, q.getProductListStmt, getProductList, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Product{}
+	for rows.Next() {
+		var i Product
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.SKU,
+			&i.Price,
+			&i.CategoryID,
+			&i.InventoryID,
+			&i.DiscountID,
 		); err != nil {
 			return nil, err
 		}
