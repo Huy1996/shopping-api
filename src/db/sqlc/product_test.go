@@ -358,3 +358,61 @@ func TestAddRemoveDiscount(t *testing.T) {
 	require.Equal(t, newProduct.ID, newProduct2.ID)
 	require.Empty(t, newProduct2.DiscountID)
 }
+
+func TestGetProductList(t *testing.T) {
+	numProduct := 10
+	for i := 0; i < numProduct; i++ {
+		inventory := CreateRandomInventory(t)
+		category := CreateRandomCategory(t)
+
+		product := CreateRandomProduct(t, inventory, category)
+		if i%2 == 0 {
+			discount := CreateRandomDiscount(t)
+			newProduct, err := testQueries.AddDiscount(context.Background(), AddDiscountParams{
+				ID: product.ID,
+				DiscountID: uuid.NullUUID{
+					UUID:  discount.ID,
+					Valid: true,
+				},
+			})
+			require.NoError(t, err)
+			require.NotEmpty(t, newProduct)
+		}
+	}
+
+	products, err := testQueries.GetProductList(context.Background(), GetProductListParams{
+		Limit:  int32(numProduct),
+		Offset: 0,
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, products)
+	require.Equal(t, numProduct, len(products))
+
+	for _, product := range products {
+		inventory, err := testQueries.GetInventoryDetail(context.Background(), product.InventoryID)
+		require.NoError(t, err)
+		require.NotEmpty(t, inventory)
+
+		category, err := testQueries.GetCategoryDetail(context.Background(), product.CategoryID)
+		require.NoError(t, err)
+		require.NotEmpty(t, category)
+
+		var discount ProductDiscount
+		if product.DiscountID.Valid {
+			discount, err = testQueries.GetDiscountDetail(context.Background(), product.DiscountID.UUID)
+			require.NoError(t, err)
+			require.NotEmpty(t, discount)
+		}
+
+		productDetail, err := testQueries.GetProductDetail(context.Background(), product.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, productDetail)
+
+		require.Equal(t, inventory.Quantity, productDetail.Quantity.Int32)
+		require.Equal(t, category.Description, productDetail.CategoryDescription.String)
+		require.Equal(t, category.Name, productDetail.Category.String)
+		require.Equal(t, discount.Name, productDetail.DiscountName.String)
+		require.Equal(t, discount.Description, productDetail.DiscountDescription.String)
+		require.Equal(t, discount.DiscountPercent, productDetail.DiscountPercent.String)
+	}
+}

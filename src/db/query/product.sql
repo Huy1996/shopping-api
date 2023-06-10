@@ -23,6 +23,11 @@ WHERE
     id = sqlc.arg(id)
 RETURNING *;
 
+-- name: GetCategoryDetail :one
+SELECT * FROM product_category
+WHERE id = $1
+LIMIT 1;
+
 -- name: GetListCategories :many
 SELECT * FROM product_category;
 
@@ -42,6 +47,11 @@ SET
 WHERE id = sqlc.arg(id)
 RETURNING *;
 
+-- name: GetInventoryDetail :one
+SELECT * FROM product_inventory
+WHERE id = $1
+LIMIT 1;
+
 -- name: CreateProduct :one
 INSERT INTO product (
     id,
@@ -60,6 +70,26 @@ SELECT * FROM product
 ORDER BY id
 LIMIT $1
 OFFSET $2;
+
+-- name: GetProductDetail :one
+SELECT
+    product.id,
+	product.name,
+	product.price,
+	product."SKU",
+	product.description,
+	product_category.name AS category,
+	product_category.description AS category_description,
+	product_discount.name AS discount_name,
+	product_discount.discount_percent AS discount_percent,
+	product_discount.description AS discount_description,
+	product_inventory.quantity AS quantity
+FROM product
+LEFT JOIN product_discount ON product.discount_id = product_discount.id
+LEFT JOIN product_inventory ON product.inventory_id = product_inventory.id
+LEFT JOIN product_category ON product.category_id = product_category.id
+WHERE product.id = $1
+LIMIT 1;
 
 -- name: AddDiscount :one
 UPDATE product
@@ -92,3 +122,8 @@ SET
     updated_at = now()
 WHERE id = sqlc.arg(id)
 RETURNING *;
+
+-- name: GetDiscountDetail :one
+SELECT * FROM product_discount
+WHERE id = $1
+LIMIT 1;
