@@ -275,9 +275,9 @@ func TestUpdateProductDiscountDiscountPercentOnly(t *testing.T) {
 	newDiscountPercent := util.RandomFloat(0.01, 100)
 	newDiscount, err := testQueries.UpdateDiscount(context.Background(), UpdateDiscountParams{
 		ID: oldDiscount.ID,
-		DiscountPercent: sql.NullString{
-			String: newDiscountPercent,
-			Valid:  true,
+		DiscountPercent: sql.NullFloat64{
+			Float64: float64(newDiscountPercent),
+			Valid:   true,
 		},
 	})
 	require.NoError(t, err)
@@ -310,9 +310,9 @@ func TestUpdateProductDiscountAllField(t *testing.T) {
 			String: newDescription,
 			Valid:  true,
 		},
-		DiscountPercent: sql.NullString{
-			String: newDiscountPercent,
-			Valid:  true,
+		DiscountPercent: sql.NullFloat64{
+			Float64: float64(newDiscountPercent),
+			Valid:   true,
 		},
 	})
 	require.NoError(t, err)
@@ -413,6 +413,6 @@ func TestGetProductList(t *testing.T) {
 		require.Equal(t, category.Name, productDetail.Category.String)
 		require.Equal(t, discount.Name, productDetail.DiscountName.String)
 		require.Equal(t, discount.Description, productDetail.DiscountDescription.String)
-		require.Equal(t, discount.DiscountPercent, productDetail.DiscountPercent.String)
+		require.Equal(t, discount.DiscountPercent, productDetail.DiscountPercent.Float64)
 	}
 }
