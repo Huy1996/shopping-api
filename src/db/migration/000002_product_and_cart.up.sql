@@ -1,6 +1,7 @@
 CREATE TABLE "user_cart" (
   "id" uuid PRIMARY KEY,
-  "owner" uuid NOT NULL
+  "owner" uuid NOT NULL,
+  "total" float8 NOT NULL DEFAULT 0
 );
 
 CREATE TABLE "cart_item" (
@@ -15,7 +16,7 @@ CREATE TABLE "product" (
   "name" varchar NOT NULL,
   "description" text NOT NULL,
   "SKU" varchar NOT NULL,
-  "price" decimal NOT NULL,
+  "price" float8 NOT NULL,
   "category_id" uuid NOT NULL,
   "inventory_id" uuid NOT NULL,
   "discount_id" uuid
@@ -40,7 +41,7 @@ CREATE TABLE "product_discount" (
   "id" uuid PRIMARY KEY,
   "name" varchar NOT NULL,
   "description" text NOT NULL,
-  "discount_percent" decimal NOT NULL,
+  "discount_percent" float8 NOT NULL,
   "active" bool NOT NULL DEFAULT False,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "updated_at" timestamptz NOT NULL DEFAULT '0001-01-01 00:00:00Z'
