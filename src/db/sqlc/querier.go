@@ -12,6 +12,8 @@ import (
 
 type Querier interface {
 	AddDiscount(ctx context.Context, arg AddDiscountParams) (Product, error)
+	AddToCart(ctx context.Context, arg AddToCartParams) (CartItem, error)
+	CreateCart(ctx context.Context, arg CreateCartParams) (UserCart, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (ProductCategory, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
 	CreateProductDiscount(ctx context.Context, arg CreateProductDiscountParams) (ProductDiscount, error)
@@ -19,7 +21,10 @@ type Querier interface {
 	CreateUserAddress(ctx context.Context, arg CreateUserAddressParams) (UserAddress, error)
 	CreateUserCredential(ctx context.Context, arg CreateUserCredentialParams) (UserCredential, error)
 	CreateUserInfo(ctx context.Context, arg CreateUserInfoParams) (UserInfo, error)
+	DeleteCart(ctx context.Context, owner uuid.UUID) error
 	GetAddress(ctx context.Context, id uuid.UUID) (UserAddress, error)
+	GetCartByID(ctx context.Context, id uuid.UUID) (UserCart, error)
+	GetCartProductList(ctx context.Context, arg GetCartProductListParams) ([]CartItem, error)
 	GetCategoryDetail(ctx context.Context, id uuid.UUID) (ProductCategory, error)
 	GetCategoryForUpdate(ctx context.Context, id uuid.UUID) (ProductCategory, error)
 	GetDiscountDetail(ctx context.Context, id uuid.UUID) (ProductDiscount, error)
@@ -33,9 +38,12 @@ type Querier interface {
 	GetUserInfoByID(ctx context.Context, id uuid.UUID) (UserInfo, error)
 	GetUserInfoByUserID(ctx context.Context, userID uuid.UUID) (UserInfo, error)
 	RemoveDiscount(ctx context.Context, id uuid.UUID) (Product, error)
+	RemoveItem(ctx context.Context, id uuid.UUID) error
+	UpdateCartItemQty(ctx context.Context, arg UpdateCartItemQtyParams) (CartItem, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (ProductCategory, error)
 	UpdateDiscount(ctx context.Context, arg UpdateDiscountParams) (ProductDiscount, error)
 	UpdateProductInventory(ctx context.Context, arg UpdateProductInventoryParams) (ProductInventory, error)
+	UpdateTotal(ctx context.Context, arg UpdateTotalParams) (UserCart, error)
 }
 
 var _ Querier = (*Queries)(nil)

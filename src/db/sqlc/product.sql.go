@@ -88,7 +88,7 @@ type CreateProductParams struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	SKU         string    `json:"SKU"`
-	Price       string    `json:"price"`
+	Price       float64   `json:"price"`
 	CategoryID  uuid.UUID `json:"category_id"`
 	InventoryID uuid.UUID `json:"inventory_id"`
 }
@@ -132,7 +132,7 @@ type CreateProductDiscountParams struct {
 	ID              uuid.UUID `json:"id"`
 	Name            string    `json:"name"`
 	Description     string    `json:"description"`
-	DiscountPercent string    `json:"discount_percent"`
+	DiscountPercent float64   `json:"discount_percent"`
 }
 
 func (q *Queries) CreateProductDiscount(ctx context.Context, arg CreateProductDiscountParams) (ProductDiscount, error) {
@@ -314,17 +314,17 @@ LIMIT 1
 `
 
 type GetProductDetailRow struct {
-	ID                  uuid.UUID      `json:"id"`
-	Name                string         `json:"name"`
-	Price               string         `json:"price"`
-	SKU                 string         `json:"SKU"`
-	Description         string         `json:"description"`
-	Category            sql.NullString `json:"category"`
-	CategoryDescription sql.NullString `json:"category_description"`
-	DiscountName        sql.NullString `json:"discount_name"`
-	DiscountPercent     sql.NullString `json:"discount_percent"`
-	DiscountDescription sql.NullString `json:"discount_description"`
-	Quantity            sql.NullInt32  `json:"quantity"`
+	ID                  uuid.UUID       `json:"id"`
+	Name                string          `json:"name"`
+	Price               float64         `json:"price"`
+	SKU                 string          `json:"SKU"`
+	Description         string          `json:"description"`
+	Category            sql.NullString  `json:"category"`
+	CategoryDescription sql.NullString  `json:"category_description"`
+	DiscountName        sql.NullString  `json:"discount_name"`
+	DiscountPercent     sql.NullFloat64 `json:"discount_percent"`
+	DiscountDescription sql.NullString  `json:"discount_description"`
+	Quantity            sql.NullInt32   `json:"quantity"`
 }
 
 func (q *Queries) GetProductDetail(ctx context.Context, id uuid.UUID) (GetProductDetailRow, error) {
@@ -455,10 +455,10 @@ RETURNING id, name, description, discount_percent, active, created_at, updated_a
 `
 
 type UpdateDiscountParams struct {
-	Name            sql.NullString `json:"name"`
-	Description     sql.NullString `json:"description"`
-	DiscountPercent sql.NullString `json:"discount_percent"`
-	ID              uuid.UUID      `json:"id"`
+	Name            sql.NullString  `json:"name"`
+	Description     sql.NullString  `json:"description"`
+	DiscountPercent sql.NullFloat64 `json:"discount_percent"`
+	ID              uuid.UUID       `json:"id"`
 }
 
 func (q *Queries) UpdateDiscount(ctx context.Context, arg UpdateDiscountParams) (ProductDiscount, error) {

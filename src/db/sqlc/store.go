@@ -9,6 +9,7 @@ import (
 // Store provides all functions to execute db queries and transaction
 type Store interface {
 	CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error)
+	//AddToCartTx(ctx context.Context, arg AddToCartTxParam) (AddToCartTxResult, error)
 	Querier
 }
 

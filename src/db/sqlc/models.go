@@ -24,7 +24,7 @@ type Product struct {
 	Description string    `json:"description"`
 	SKU         string    `json:"SKU"`
 	// Cannot be negative
-	Price       string        `json:"price"`
+	Price       float64       `json:"price"`
 	CategoryID  uuid.UUID     `json:"category_id"`
 	InventoryID uuid.UUID     `json:"inventory_id"`
 	DiscountID  uuid.NullUUID `json:"discount_id"`
@@ -42,7 +42,7 @@ type ProductDiscount struct {
 	ID              uuid.UUID `json:"id"`
 	Name            string    `json:"name"`
 	Description     string    `json:"description"`
-	DiscountPercent string    `json:"discount_percent"`
+	DiscountPercent float64   `json:"discount_percent"`
 	Active          bool      `json:"active"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
@@ -69,6 +69,7 @@ type UserAddress struct {
 type UserCart struct {
 	ID    uuid.UUID `json:"id"`
 	Owner uuid.UUID `json:"owner"`
+	Total float64   `json:"total"`
 }
 
 type UserCredential struct {
