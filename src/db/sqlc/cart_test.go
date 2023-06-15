@@ -40,6 +40,17 @@ func CreateProduct(t *testing.T) Product {
 		CreateRandomCategory(t),
 	)
 
+	productDiscount := CreateRandomDiscount(t)
+	product, err := testQueries.AddDiscount(context.Background(), AddDiscountParams{
+		ID: product.ID,
+		DiscountID: uuid.NullUUID{
+			UUID:  productDiscount.ID,
+			Valid: true,
+		},
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, product)
+
 	return product
 }
 

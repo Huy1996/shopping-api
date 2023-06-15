@@ -31,8 +31,12 @@ func (store *SQLStore) AddToCartTx(ctx context.Context, arg AddToCartTxParam) (A
 			return err
 		}
 
+		if arg.Quantity <= 0 {
+			return fmt.Errorf("Insuffice quantity. Cannot be less than 1.")
+		}
+
 		if product.Quantity.Int32 < arg.Quantity {
-			return fmt.Errorf("insuffice quantity. Only %v available", product.Quantity.Int32)
+			return fmt.Errorf("Insuffice quantity. Only %v available", product.Quantity.Int32)
 		}
 
 		result.CartItem, err = queries.AddToCart(ctx, AddToCartParams{
@@ -47,7 +51,7 @@ func (store *SQLStore) AddToCartTx(ctx context.Context, arg AddToCartTxParam) (A
 
 		result.Cart, err = queries.UpdateTotal(ctx, UpdateTotalParams{
 			ID:     arg.CartID,
-			Amount: float64(arg.Quantity) * (product.Price * product.DiscountPercent.Float64 / 100),
+			Amount: float64(arg.Quantity) * product.Price * (1 + product.DiscountPercent.Float64/100),
 		})
 
 		return err
