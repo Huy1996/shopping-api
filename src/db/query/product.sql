@@ -82,6 +82,7 @@ SELECT
 	product_category.description AS category_description,
 	product_discount.name AS discount_name,
 	product_discount.discount_percent AS discount_percent,
+	product_discount.active AS discount_active,
 	product_discount.description AS discount_description,
 	product_inventory.quantity AS quantity
 FROM product

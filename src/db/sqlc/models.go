@@ -69,7 +69,6 @@ type UserAddress struct {
 type UserCart struct {
 	ID    uuid.UUID `json:"id"`
 	Owner uuid.UUID `json:"owner"`
-	Total float64   `json:"total"`
 }
 
 type UserCredential struct {

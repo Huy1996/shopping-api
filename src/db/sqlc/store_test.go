@@ -2,6 +2,8 @@ package db
 
 import (
 	"context"
+	"database/sql"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 	"shopping-cart/src/util"
@@ -79,11 +81,18 @@ func TestAddToCartTx(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, result)
-	price := float64(productDetail.Quantity.Int32) * productDetail.Price * (1 + productDetail.DiscountPercent.Float64/100)
-	require.Equal(t, price, result.Cart.Total)
+
+	var price float64
+	if productDetail.DiscountActive.Bool {
+		price = float64(productDetail.Quantity.Int32) * product.Price * (1 + productDetail.DiscountPercent.Float64/100)
+	} else {
+		price = float64(productDetail.Quantity.Int32) * product.Price
+	}
+
 	require.Equal(t, cart.ID, result.CartItem.CartID)
 	require.Equal(t, productDetail.ID, result.CartItem.ProductID)
 	require.Equal(t, productDetail.Quantity.Int32, result.CartItem.Quantity)
+	require.Equal(t, price, result.Total)
 
 	// Negative Qty
 	result1, err := store.AddToCartTx(ctx, AddToCartTxParam{
@@ -125,13 +134,84 @@ func TestAddToCartTx(t *testing.T) {
 			ProductID: productDetail.ID,
 			Quantity:  productDetail.Quantity.Int32,
 		})
-		total += float64(result.CartItem.Quantity) * productDetail.Price * (1 + productDetail.DiscountPercent.Float64/100)
+
+		if productDetail.DiscountActive.Bool {
+			price = float64(productDetail.Quantity.Int32) * product.Price * (1 + productDetail.DiscountPercent.Float64/100)
+		} else {
+			price = float64(productDetail.Quantity.Int32) * product.Price
+		}
+
+		total += price
 
 		require.NoError(t, err)
 		require.NotEmpty(t, result)
-		require.Equal(t, total, result.Cart.Total)
 		require.Equal(t, cart.ID, result.CartItem.CartID)
+		require.Equal(t, total, result.Total)
 		require.Equal(t, productDetail.ID, result.CartItem.ProductID)
 		require.Equal(t, productDetail.Quantity.Int32, result.CartItem.Quantity)
 	}
+}
+
+func TestRemoveFromCartTx(t *testing.T) {
+	store := NewStore(testDB)
+	cart := CreateCart(t)
+
+	ctx := context.Background()
+	var lastProduct Product
+	var lastCartId uuid.UUID
+	var total float64
+
+	for i := 0; i < 10; i++ {
+		lastProduct = CreateProduct(t)
+
+		productDetail, err := store.GetProductDetail(ctx, lastProduct.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, productDetail)
+
+		result, err := store.AddToCartTx(ctx, AddToCartTxParam{
+			CartID:    cart.ID,
+			ProductID: productDetail.ID,
+			Quantity:  productDetail.Quantity.Int32,
+		})
+
+		if productDetail.DiscountActive.Bool {
+			total += float64(productDetail.Quantity.Int32) * lastProduct.Price * (1 + productDetail.DiscountPercent.Float64/100)
+		} else {
+			total += float64(productDetail.Quantity.Int32) * lastProduct.Price
+		}
+		lastCartId = result.CartItem.ID
+		require.NoError(t, err)
+		require.NotEmpty(t, result)
+		require.Equal(t, cart.ID, result.CartItem.CartID)
+		require.Equal(t, total, result.Total)
+		require.Equal(t, productDetail.ID, result.CartItem.ProductID)
+		require.Equal(t, productDetail.Quantity.Int32, result.CartItem.Quantity)
+	}
+
+	productDetail, err := store.GetProductDetail(ctx, lastProduct.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, productDetail)
+	if productDetail.DiscountActive.Bool {
+		total -= float64(productDetail.Quantity.Int32) * lastProduct.Price * (1 + productDetail.DiscountPercent.Float64/100)
+	} else {
+		total -= float64(productDetail.Quantity.Int32) * lastProduct.Price
+	}
+
+	// Successfully
+	result, err := store.RemoveFromCartTx(ctx, RemoveFromCartTxParam{
+		CartItemID: lastCartId,
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, result)
+
+	require.Equal(t, total, result.Total)
+
+	// Item not exist
+	result1, err := store.RemoveFromCartTx(ctx, RemoveFromCartTxParam{
+		CartItemID: lastCartId,
+	})
+	require.Error(t, err)
+	require.Empty(t, result1)
+
+	require.ErrorIs(t, sql.ErrNoRows, err)
 }

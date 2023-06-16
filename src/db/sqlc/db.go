@@ -63,6 +63,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getCartByIDStmt, err = db.PrepareContext(ctx, getCartByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCartByID: %w", err)
 	}
+	if q.getCartItemDetailStmt, err = db.PrepareContext(ctx, getCartItemDetail); err != nil {
+		return nil, fmt.Errorf("error preparing query GetCartItemDetail: %w", err)
+	}
 	if q.getCartProductListStmt, err = db.PrepareContext(ctx, getCartProductList); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCartProductList: %w", err)
 	}
@@ -93,6 +96,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getProductListStmt, err = db.PrepareContext(ctx, getProductList); err != nil {
 		return nil, fmt.Errorf("error preparing query GetProductList: %w", err)
 	}
+	if q.getTotalStmt, err = db.PrepareContext(ctx, getTotal); err != nil {
+		return nil, fmt.Errorf("error preparing query GetTotal: %w", err)
+	}
 	if q.getUserCredentialStmt, err = db.PrepareContext(ctx, getUserCredential); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserCredential: %w", err)
 	}
@@ -119,9 +125,6 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.updateProductInventoryStmt, err = db.PrepareContext(ctx, updateProductInventory); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateProductInventory: %w", err)
-	}
-	if q.updateTotalStmt, err = db.PrepareContext(ctx, updateTotal); err != nil {
-		return nil, fmt.Errorf("error preparing query UpdateTotal: %w", err)
 	}
 	return &q, nil
 }
@@ -193,6 +196,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getCartByIDStmt: %w", cerr)
 		}
 	}
+	if q.getCartItemDetailStmt != nil {
+		if cerr := q.getCartItemDetailStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getCartItemDetailStmt: %w", cerr)
+		}
+	}
 	if q.getCartProductListStmt != nil {
 		if cerr := q.getCartProductListStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getCartProductListStmt: %w", cerr)
@@ -243,6 +251,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getProductListStmt: %w", cerr)
 		}
 	}
+	if q.getTotalStmt != nil {
+		if cerr := q.getTotalStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getTotalStmt: %w", cerr)
+		}
+	}
 	if q.getUserCredentialStmt != nil {
 		if cerr := q.getUserCredentialStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getUserCredentialStmt: %w", cerr)
@@ -286,11 +299,6 @@ func (q *Queries) Close() error {
 	if q.updateProductInventoryStmt != nil {
 		if cerr := q.updateProductInventoryStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateProductInventoryStmt: %w", cerr)
-		}
-	}
-	if q.updateTotalStmt != nil {
-		if cerr := q.updateTotalStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing updateTotalStmt: %w", cerr)
 		}
 	}
 	return err
@@ -345,6 +353,7 @@ type Queries struct {
 	deleteCartStmt             *sql.Stmt
 	getAddressStmt             *sql.Stmt
 	getCartByIDStmt            *sql.Stmt
+	getCartItemDetailStmt      *sql.Stmt
 	getCartProductListStmt     *sql.Stmt
 	getCategoryDetailStmt      *sql.Stmt
 	getCategoryForUpdateStmt   *sql.Stmt
@@ -355,6 +364,7 @@ type Queries struct {
 	getNumberAddressesStmt     *sql.Stmt
 	getProductDetailStmt       *sql.Stmt
 	getProductListStmt         *sql.Stmt
+	getTotalStmt               *sql.Stmt
 	getUserCredentialStmt      *sql.Stmt
 	getUserInfoByIDStmt        *sql.Stmt
 	getUserInfoByUserIDStmt    *sql.Stmt
@@ -364,7 +374,6 @@ type Queries struct {
 	updateCategoryStmt         *sql.Stmt
 	updateDiscountStmt         *sql.Stmt
 	updateProductInventoryStmt *sql.Stmt
-	updateTotalStmt            *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
@@ -384,6 +393,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		deleteCartStmt:             q.deleteCartStmt,
 		getAddressStmt:             q.getAddressStmt,
 		getCartByIDStmt:            q.getCartByIDStmt,
+		getCartItemDetailStmt:      q.getCartItemDetailStmt,
 		getCartProductListStmt:     q.getCartProductListStmt,
 		getCategoryDetailStmt:      q.getCategoryDetailStmt,
 		getCategoryForUpdateStmt:   q.getCategoryForUpdateStmt,
@@ -394,6 +404,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getNumberAddressesStmt:     q.getNumberAddressesStmt,
 		getProductDetailStmt:       q.getProductDetailStmt,
 		getProductListStmt:         q.getProductListStmt,
+		getTotalStmt:               q.getTotalStmt,
 		getUserCredentialStmt:      q.getUserCredentialStmt,
 		getUserInfoByIDStmt:        q.getUserInfoByIDStmt,
 		getUserInfoByUserIDStmt:    q.getUserInfoByUserIDStmt,
@@ -403,6 +414,5 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		updateCategoryStmt:         q.updateCategoryStmt,
 		updateDiscountStmt:         q.updateDiscountStmt,
 		updateProductInventoryStmt: q.updateProductInventoryStmt,
-		updateTotalStmt:            q.updateTotalStmt,
 	}
 }

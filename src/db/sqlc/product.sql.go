@@ -303,6 +303,7 @@ SELECT
 	product_category.description AS category_description,
 	product_discount.name AS discount_name,
 	product_discount.discount_percent AS discount_percent,
+	product_discount.active AS discount_active,
 	product_discount.description AS discount_description,
 	product_inventory.quantity AS quantity
 FROM product
@@ -323,6 +324,7 @@ type GetProductDetailRow struct {
 	CategoryDescription sql.NullString  `json:"category_description"`
 	DiscountName        sql.NullString  `json:"discount_name"`
 	DiscountPercent     sql.NullFloat64 `json:"discount_percent"`
+	DiscountActive      sql.NullBool    `json:"discount_active"`
 	DiscountDescription sql.NullString  `json:"discount_description"`
 	Quantity            sql.NullInt32   `json:"quantity"`
 }
@@ -340,6 +342,7 @@ func (q *Queries) GetProductDetail(ctx context.Context, id uuid.UUID) (GetProduc
 		&i.CategoryDescription,
 		&i.DiscountName,
 		&i.DiscountPercent,
+		&i.DiscountActive,
 		&i.DiscountDescription,
 		&i.Quantity,
 	)
