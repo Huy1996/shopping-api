@@ -28,7 +28,6 @@ func CreateCart(t *testing.T) UserCart {
 
 	require.Equal(t, arg.ID, cart.ID)
 	require.Equal(t, arg.Owner, cart.Owner)
-	require.Equal(t, cart.Total, float64(0))
 
 	return cart
 }
@@ -85,7 +84,7 @@ func TestAddToCart(t *testing.T) {
 	id, err := uuid.NewRandom()
 	require.NoError(t, err)
 	require.NotEmpty(t, id)
-
+	ctx := context.Background()
 	arg := AddToCartParams{
 		ID:        id,
 		CartID:    cart.ID,
@@ -93,13 +92,29 @@ func TestAddToCart(t *testing.T) {
 		Quantity:  int32(util.RandomInt(1, 100)),
 	}
 
-	cartItem, err := testQueries.AddToCart(context.Background(), arg)
+	cartItem, err := testQueries.AddToCart(ctx, arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, cartItem)
 
 	require.Equal(t, arg.ID, cartItem.ID)
 	require.Equal(t, arg.CartID, cartItem.CartID)
 	require.Equal(t, arg.Quantity, cartItem.Quantity)
+
+	total, err := testQueries.GetTotal(ctx, cartItem.CartID)
+	require.NoError(t, err)
+	require.NotEmpty(t, total)
+
+	cartItemDetail, err := testQueries.GetCartItemDetail(ctx, cartItem.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, cartItemDetail)
+
+	var expectedTotal float64
+	if cartItemDetail.DiscountActive.Bool {
+		expectedTotal = float64(cartItemDetail.Quantity) * cartItemDetail.Price.Float64 * (1 + cartItemDetail.DiscountPercent.Float64/100)
+	} else {
+		expectedTotal = float64(cartItemDetail.Quantity) * cartItemDetail.Price.Float64
+	}
+	require.Equal(t, expectedTotal, total)
 }
 
 func TestDeleteCart(t *testing.T) {
@@ -112,24 +127,6 @@ func TestDeleteCart(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorIs(t, err, sql.ErrNoRows)
 	require.Empty(t, deletedCart)
-}
-
-func TestUpdateTotal(t *testing.T) {
-	cart := CreateCart(t)
-	amount := float64(50.0)
-
-	arg := UpdateTotalParams{
-		ID:     cart.ID,
-		Amount: amount,
-	}
-
-	updatedCart, err := testQueries.UpdateTotal(context.Background(), arg)
-	require.NoError(t, err)
-	require.NotEmpty(t, updatedCart)
-
-	require.Equal(t, cart.ID, updatedCart.ID)
-	require.Equal(t, cart.Owner, updatedCart.Owner)
-	require.Equal(t, amount, updatedCart.Total)
 }
 
 func TestAddGetRemoveItem(t *testing.T) {

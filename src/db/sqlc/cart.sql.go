@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -52,7 +53,7 @@ INSERT INTO user_cart (
     owner
 ) VALUES (
     $1, $2
-) RETURNING id, owner, total
+) RETURNING id, owner
 `
 
 type CreateCartParams struct {
@@ -63,7 +64,7 @@ type CreateCartParams struct {
 func (q *Queries) CreateCart(ctx context.Context, arg CreateCartParams) (UserCart, error) {
 	row := q.queryRow(ctx, q.createCartStmt, createCart, arg.ID, arg.Owner)
 	var i UserCart
-	err := row.Scan(&i.ID, &i.Owner, &i.Total)
+	err := row.Scan(&i.ID, &i.Owner)
 	return i, err
 }
 
@@ -78,7 +79,7 @@ func (q *Queries) DeleteCart(ctx context.Context, owner uuid.UUID) error {
 }
 
 const getCartByID = `-- name: GetCartByID :one
-SELECT id, owner, total FROM user_cart
+SELECT id, owner FROM user_cart
 WHERE id = $1
 LIMIT 1
 `
@@ -86,7 +87,44 @@ LIMIT 1
 func (q *Queries) GetCartByID(ctx context.Context, id uuid.UUID) (UserCart, error) {
 	row := q.queryRow(ctx, q.getCartByIDStmt, getCartByID, id)
 	var i UserCart
-	err := row.Scan(&i.ID, &i.Owner, &i.Total)
+	err := row.Scan(&i.ID, &i.Owner)
+	return i, err
+}
+
+const getCartItemDetail = `-- name: GetCartItemDetail :one
+SELECT
+	cart_item.id,
+	cart_item.cart_id,
+	cart_item.quantity,
+	product.price AS price,
+	product_discount.discount_percent AS discount_percent,
+	product_discount.active AS discount_active
+FROM cart_item
+LEFT JOIN product ON cart_item.product_id = product.id
+LEFT JOIN product_discount ON product.discount_id = product_discount.id
+WHERE cart_item.id = $1
+`
+
+type GetCartItemDetailRow struct {
+	ID              uuid.UUID       `json:"id"`
+	CartID          uuid.UUID       `json:"cart_id"`
+	Quantity        int32           `json:"quantity"`
+	Price           sql.NullFloat64 `json:"price"`
+	DiscountPercent sql.NullFloat64 `json:"discount_percent"`
+	DiscountActive  sql.NullBool    `json:"discount_active"`
+}
+
+func (q *Queries) GetCartItemDetail(ctx context.Context, id uuid.UUID) (GetCartItemDetailRow, error) {
+	row := q.queryRow(ctx, q.getCartItemDetailStmt, getCartItemDetail, id)
+	var i GetCartItemDetailRow
+	err := row.Scan(
+		&i.ID,
+		&i.CartID,
+		&i.Quantity,
+		&i.Price,
+		&i.DiscountPercent,
+		&i.DiscountActive,
+	)
 	return i, err
 }
 
@@ -131,6 +169,29 @@ func (q *Queries) GetCartProductList(ctx context.Context, arg GetCartProductList
 	return items, nil
 }
 
+const getTotal = `-- name: GetTotal :one
+SELECT
+	float8(sum(a.price)) AS total
+FROM (
+	SELECT
+		CASE
+			WHEN product_discount.active THEN (product.price * (1 + product_discount.discount_percent / 100) * cart_item.quantity)
+			ELSE (product.price * cart_item.quantity )
+		END AS price
+	FROM cart_item
+	LEFT JOIN product ON cart_item.product_id = product.id
+	LEFT JOIN product_discount ON product.discount_id = product_discount.id
+	WHERE cart_item.cart_id = $1
+) AS a
+`
+
+func (q *Queries) GetTotal(ctx context.Context, cartID uuid.UUID) (float64, error) {
+	row := q.queryRow(ctx, q.getTotalStmt, getTotal, cartID)
+	var total float64
+	err := row.Scan(&total)
+	return total, err
+}
+
 const removeItem = `-- name: RemoveItem :exec
 DELETE FROM cart_item
 WHERE id = $1
@@ -162,24 +223,5 @@ func (q *Queries) UpdateCartItemQty(ctx context.Context, arg UpdateCartItemQtyPa
 		&i.ProductID,
 		&i.Quantity,
 	)
-	return i, err
-}
-
-const updateTotal = `-- name: UpdateTotal :one
-UPDATE user_cart
-SET total = total + $1
-WHERE id = $2
-RETURNING id, owner, total
-`
-
-type UpdateTotalParams struct {
-	Amount float64   `json:"amount"`
-	ID     uuid.UUID `json:"id"`
-}
-
-func (q *Queries) UpdateTotal(ctx context.Context, arg UpdateTotalParams) (UserCart, error) {
-	row := q.queryRow(ctx, q.updateTotalStmt, updateTotal, arg.Amount, arg.ID)
-	var i UserCart
-	err := row.Scan(&i.ID, &i.Owner, &i.Total)
 	return i, err
 }

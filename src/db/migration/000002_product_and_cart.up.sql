@@ -1,7 +1,6 @@
 CREATE TABLE "user_cart" (
   "id" uuid PRIMARY KEY,
-  "owner" uuid NOT NULL,
-  "total" float8 NOT NULL DEFAULT 0
+  "owner" uuid NOT NULL
 );
 
 CREATE TABLE "cart_item" (

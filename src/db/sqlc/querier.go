@@ -24,6 +24,7 @@ type Querier interface {
 	DeleteCart(ctx context.Context, owner uuid.UUID) error
 	GetAddress(ctx context.Context, id uuid.UUID) (UserAddress, error)
 	GetCartByID(ctx context.Context, id uuid.UUID) (UserCart, error)
+	GetCartItemDetail(ctx context.Context, id uuid.UUID) (GetCartItemDetailRow, error)
 	GetCartProductList(ctx context.Context, arg GetCartProductListParams) ([]CartItem, error)
 	GetCategoryDetail(ctx context.Context, id uuid.UUID) (ProductCategory, error)
 	GetCategoryForUpdate(ctx context.Context, id uuid.UUID) (ProductCategory, error)
@@ -34,6 +35,7 @@ type Querier interface {
 	GetNumberAddresses(ctx context.Context, owner uuid.UUID) (int64, error)
 	GetProductDetail(ctx context.Context, id uuid.UUID) (GetProductDetailRow, error)
 	GetProductList(ctx context.Context, arg GetProductListParams) ([]Product, error)
+	GetTotal(ctx context.Context, cartID uuid.UUID) (float64, error)
 	GetUserCredential(ctx context.Context, username string) (UserCredential, error)
 	GetUserInfoByID(ctx context.Context, id uuid.UUID) (UserInfo, error)
 	GetUserInfoByUserID(ctx context.Context, userID uuid.UUID) (UserInfo, error)
@@ -43,7 +45,6 @@ type Querier interface {
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (ProductCategory, error)
 	UpdateDiscount(ctx context.Context, arg UpdateDiscountParams) (ProductDiscount, error)
 	UpdateProductInventory(ctx context.Context, arg UpdateProductInventoryParams) (ProductInventory, error)
-	UpdateTotal(ctx context.Context, arg UpdateTotalParams) (UserCart, error)
 }
 
 var _ Querier = (*Queries)(nil)
