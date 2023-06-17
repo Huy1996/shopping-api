@@ -84,7 +84,7 @@ func TestAddToCartTx(t *testing.T) {
 
 	var price float64
 	if productDetail.DiscountActive.Bool {
-		price = float64(productDetail.Quantity.Int32) * product.Price * (1 + productDetail.DiscountPercent.Float64/100)
+		price = float64(productDetail.Quantity.Int32) * product.Price * (1 - productDetail.DiscountPercent.Float64/100)
 	} else {
 		price = float64(productDetail.Quantity.Int32) * product.Price
 	}
@@ -92,7 +92,7 @@ func TestAddToCartTx(t *testing.T) {
 	require.Equal(t, cart.ID, result.CartItem.CartID)
 	require.Equal(t, productDetail.ID, result.CartItem.ProductID)
 	require.Equal(t, productDetail.Quantity.Int32, result.CartItem.Quantity)
-	require.Equal(t, price, result.Total)
+	require.True(t, util.WithinTolerance(price, result.Total, util.CurrencyTolerance))
 
 	// Negative Qty
 	result1, err := store.AddToCartTx(ctx, AddToCartTxParam{
@@ -136,7 +136,7 @@ func TestAddToCartTx(t *testing.T) {
 		})
 
 		if productDetail.DiscountActive.Bool {
-			price = float64(productDetail.Quantity.Int32) * product.Price * (1 + productDetail.DiscountPercent.Float64/100)
+			price = float64(productDetail.Quantity.Int32) * product.Price * (1 - productDetail.DiscountPercent.Float64/100)
 		} else {
 			price = float64(productDetail.Quantity.Int32) * product.Price
 		}
@@ -146,10 +146,24 @@ func TestAddToCartTx(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, result)
 		require.Equal(t, cart.ID, result.CartItem.CartID)
-		require.Equal(t, total, result.Total)
+		require.True(t, util.WithinTolerance(total, result.Total, util.CurrencyTolerance))
 		require.Equal(t, productDetail.ID, result.CartItem.ProductID)
 		require.Equal(t, productDetail.Quantity.Int32, result.CartItem.Quantity)
 	}
+
+	// Non-exist product ID
+	randomID, err := uuid.NewRandom()
+	require.NoError(t, err)
+	require.NotEmpty(t, randomID)
+
+	result4, err := store.AddToCartTx(ctx, AddToCartTxParam{
+		CartID:    cart.ID,
+		ProductID: randomID,
+		Quantity:  1,
+	})
+	require.Error(t, err)
+	require.Empty(t, result4)
+	require.ErrorIs(t, sql.ErrNoRows, err)
 }
 
 func TestRemoveFromCartTx(t *testing.T) {
@@ -175,7 +189,7 @@ func TestRemoveFromCartTx(t *testing.T) {
 		})
 
 		if productDetail.DiscountActive.Bool {
-			total += float64(productDetail.Quantity.Int32) * lastProduct.Price * (1 + productDetail.DiscountPercent.Float64/100)
+			total += float64(productDetail.Quantity.Int32) * lastProduct.Price * (1 - productDetail.DiscountPercent.Float64/100)
 		} else {
 			total += float64(productDetail.Quantity.Int32) * lastProduct.Price
 		}
@@ -183,7 +197,7 @@ func TestRemoveFromCartTx(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, result)
 		require.Equal(t, cart.ID, result.CartItem.CartID)
-		require.Equal(t, total, result.Total)
+		require.True(t, util.WithinTolerance(total, result.Total, util.CurrencyTolerance))
 		require.Equal(t, productDetail.ID, result.CartItem.ProductID)
 		require.Equal(t, productDetail.Quantity.Int32, result.CartItem.Quantity)
 	}
@@ -192,7 +206,7 @@ func TestRemoveFromCartTx(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, productDetail)
 	if productDetail.DiscountActive.Bool {
-		total -= float64(productDetail.Quantity.Int32) * lastProduct.Price * (1 + productDetail.DiscountPercent.Float64/100)
+		total -= float64(productDetail.Quantity.Int32) * lastProduct.Price * (1 - productDetail.DiscountPercent.Float64/100)
 	} else {
 		total -= float64(productDetail.Quantity.Int32) * lastProduct.Price
 	}
@@ -204,7 +218,7 @@ func TestRemoveFromCartTx(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, result)
 
-	require.Equal(t, total, result.Total)
+	require.True(t, util.WithinTolerance(total, result.Total, util.CurrencyTolerance))
 
 	// Item not exist
 	result1, err := store.RemoveFromCartTx(ctx, RemoveFromCartTxParam{
@@ -213,5 +227,67 @@ func TestRemoveFromCartTx(t *testing.T) {
 	require.Error(t, err)
 	require.Empty(t, result1)
 
+	require.ErrorIs(t, sql.ErrNoRows, err)
+}
+
+func TestChangeQtyTx(t *testing.T) {
+	store := NewStore(testDB)
+	cart := CreateCart(t)
+	product := CreateProduct(t)
+
+	ctx := context.Background()
+
+	productDetail, err := store.GetProductDetail(ctx, product.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, productDetail)
+
+	addResult, err := store.AddToCartTx(ctx, AddToCartTxParam{
+		CartID:    cart.ID,
+		ProductID: productDetail.ID,
+		Quantity:  productDetail.Quantity.Int32,
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, addResult)
+
+	// success
+	result, err := store.ChangeQtyTx(ctx, ChangeQtyTxParam{
+		CartItemID: addResult.CartItem.ID,
+		Quantity:   productDetail.Quantity.Int32 - 1,
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, result)
+	var total float64
+
+	if productDetail.DiscountActive.Bool {
+		total = float64(productDetail.Quantity.Int32-1) * productDetail.Price * (1 - productDetail.DiscountPercent.Float64/100)
+	} else {
+		total = float64(productDetail.Quantity.Int32-1) * productDetail.Price
+	}
+	require.True(t, util.WithinTolerance(total, result.Total, util.CurrencyTolerance))
+
+	// fail (over available qty)
+	result1, err := store.ChangeQtyTx(ctx, ChangeQtyTxParam{
+		CartItemID: addResult.CartItem.ID,
+		Quantity:   productDetail.Quantity.Int32 + 1,
+	})
+	require.Error(t, err)
+	require.Empty(t, result1)
+
+	// fail (less than 1)
+	result2, err := store.ChangeQtyTx(ctx, ChangeQtyTxParam{
+		CartItemID: addResult.CartItem.ID,
+		Quantity:   0,
+	})
+	require.Error(t, err)
+	require.Empty(t, result2)
+
+	// Error not found
+	randomID, err := uuid.NewRandom()
+	result3, err := store.ChangeQtyTx(ctx, ChangeQtyTxParam{
+		CartItemID: randomID,
+		Quantity:   0,
+	})
+	require.Error(t, err)
+	require.Empty(t, result3)
 	require.ErrorIs(t, sql.ErrNoRows, err)
 }

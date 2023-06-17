@@ -12,3 +12,5 @@ const (
 	GR = "Gilroy"
 	MV = "Mountain View"
 )
+
+const CurrencyTolerance = 0.00001

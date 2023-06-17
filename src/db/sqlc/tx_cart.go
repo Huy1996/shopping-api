@@ -93,3 +93,49 @@ func (store *SQLStore) RemoveFromCartTx(ctx context.Context, arg RemoveFromCartT
 
 	return result, err
 }
+
+type ChangeQtyTxParam struct {
+	CartItemID uuid.UUID `json:"cart_item_id"`
+	Quantity   int32     `json:"quantity"`
+}
+
+type ChangeQtyTxResult struct {
+	Total    float64
+	CartItem CartItem
+}
+
+func (store *SQLStore) ChangeQtyTx(ctx context.Context, arg ChangeQtyTxParam) (ChangeQtyTxResult, error) {
+	var result ChangeQtyTxResult
+
+	err := store.execTx(ctx, func(queries *Queries) error {
+		var err error
+
+		cartItemDetail, err := queries.GetCartItemDetail(ctx, arg.CartItemID)
+		if err != nil {
+			return err
+		}
+
+		// Over available
+		if arg.Quantity > cartItemDetail.QtyInStock.Int32 {
+			return fmt.Errorf("Insuffice quantity. Only %v available", cartItemDetail.QtyInStock.Int32)
+		}
+
+		// Less than 1
+		if arg.Quantity <= 0 {
+			return fmt.Errorf("Insuffice quantity. Cannot be less than 1.")
+		}
+
+		result.CartItem, err = queries.UpdateCartItemQty(ctx, UpdateCartItemQtyParams{
+			ID:       arg.CartItemID,
+			Quantity: arg.Quantity,
+		})
+		if err != nil {
+			return err
+		}
+
+		result.Total, err = queries.GetTotal(ctx, result.CartItem.CartID)
+		return err
+	})
+
+	return result, err
+}

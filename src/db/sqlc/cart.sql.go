@@ -97,11 +97,18 @@ SELECT
 	cart_item.cart_id,
 	cart_item.quantity,
 	product.price AS price,
+	product_inventory.quantity AS qty_in_stock,
+	float8(
+	CASE
+		WHEN product_discount.active THEN (product.price * (1 - product_discount.discount_percent / 100) * cart_item.quantity)
+		ELSE (product.price * cart_item.quantity )
+	END) AS total,
 	product_discount.discount_percent AS discount_percent,
 	product_discount.active AS discount_active
 FROM cart_item
 LEFT JOIN product ON cart_item.product_id = product.id
 LEFT JOIN product_discount ON product.discount_id = product_discount.id
+LEFT JOIN product_inventory ON product.inventory_id = product_inventory.id
 WHERE cart_item.id = $1
 `
 
@@ -110,6 +117,8 @@ type GetCartItemDetailRow struct {
 	CartID          uuid.UUID       `json:"cart_id"`
 	Quantity        int32           `json:"quantity"`
 	Price           sql.NullFloat64 `json:"price"`
+	QtyInStock      sql.NullInt32   `json:"qty_in_stock"`
+	Total           float64         `json:"total"`
 	DiscountPercent sql.NullFloat64 `json:"discount_percent"`
 	DiscountActive  sql.NullBool    `json:"discount_active"`
 }
@@ -122,10 +131,83 @@ func (q *Queries) GetCartItemDetail(ctx context.Context, id uuid.UUID) (GetCartI
 		&i.CartID,
 		&i.Quantity,
 		&i.Price,
+		&i.QtyInStock,
+		&i.Total,
 		&i.DiscountPercent,
 		&i.DiscountActive,
 	)
 	return i, err
+}
+
+const getCartProductDetailList = `-- name: GetCartProductDetailList :many
+SELECT
+	cart_item.id,
+	cart_item.cart_id,
+	cart_item.quantity,
+	product.price AS price,
+	product_inventory.quantity AS qty_in_stock,
+	float8(CASE
+		WHEN product_discount.active THEN (product.price * (1 - product_discount.discount_percent / 100) * cart_item.quantity)
+		ELSE (product.price * cart_item.quantity )
+	END) AS total,
+	product_discount.discount_percent AS discount_percent,
+	product_discount.active AS discount_active
+FROM cart_item
+LEFT JOIN product ON cart_item.product_id = product.id
+LEFT JOIN product_discount ON product.discount_id = product_discount.id
+LEFT JOIN product_inventory ON product.inventory_id = product_inventory.id
+WHERE cart_item.cart_id = $1
+LIMIT $2
+OFFSET $3
+`
+
+type GetCartProductDetailListParams struct {
+	CartID uuid.UUID `json:"cart_id"`
+	Limit  int32     `json:"limit"`
+	Offset int32     `json:"offset"`
+}
+
+type GetCartProductDetailListRow struct {
+	ID              uuid.UUID       `json:"id"`
+	CartID          uuid.UUID       `json:"cart_id"`
+	Quantity        int32           `json:"quantity"`
+	Price           sql.NullFloat64 `json:"price"`
+	QtyInStock      sql.NullInt32   `json:"qty_in_stock"`
+	Total           float64         `json:"total"`
+	DiscountPercent sql.NullFloat64 `json:"discount_percent"`
+	DiscountActive  sql.NullBool    `json:"discount_active"`
+}
+
+func (q *Queries) GetCartProductDetailList(ctx context.Context, arg GetCartProductDetailListParams) ([]GetCartProductDetailListRow, error) {
+	rows, err := q.query(ctx, q.getCartProductDetailListStmt, getCartProductDetailList, arg.CartID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetCartProductDetailListRow{}
+	for rows.Next() {
+		var i GetCartProductDetailListRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CartID,
+			&i.Quantity,
+			&i.Price,
+			&i.QtyInStock,
+			&i.Total,
+			&i.DiscountPercent,
+			&i.DiscountActive,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getCartProductList = `-- name: GetCartProductList :many
@@ -175,7 +257,7 @@ SELECT
 FROM (
 	SELECT
 		CASE
-			WHEN product_discount.active THEN (product.price * (1 + product_discount.discount_percent / 100) * cart_item.quantity)
+			WHEN product_discount.active THEN (product.price * (1 - product_discount.discount_percent / 100) * cart_item.quantity)
 			ELSE (product.price * cart_item.quantity )
 		END AS price
 	FROM cart_item
