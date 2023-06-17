@@ -11,6 +11,7 @@ type Store interface {
 	CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error)
 	AddToCartTx(ctx context.Context, arg AddToCartTxParam) (AddToCartTxResult, error)
 	RemoveFromCartTx(ctx context.Context, arg RemoveFromCartTxParam) (RemoveFromCartTxResult, error)
+	ChangeQtyTx(ctx context.Context, arg ChangeQtyTxParam) (ChangeQtyTxResult, error)
 	Querier
 }
 

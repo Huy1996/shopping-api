@@ -31,12 +31,40 @@ SELECT
 	cart_item.cart_id,
 	cart_item.quantity,
 	product.price AS price,
+	product_inventory.quantity AS qty_in_stock,
+	float8(
+	CASE
+		WHEN product_discount.active THEN (product.price * (1 - product_discount.discount_percent / 100) * cart_item.quantity)
+		ELSE (product.price * cart_item.quantity )
+	END) AS total,
 	product_discount.discount_percent AS discount_percent,
 	product_discount.active AS discount_active
 FROM cart_item
 LEFT JOIN product ON cart_item.product_id = product.id
 LEFT JOIN product_discount ON product.discount_id = product_discount.id
+LEFT JOIN product_inventory ON product.inventory_id = product_inventory.id
 WHERE cart_item.id = $1;
+
+-- name: GetCartProductDetailList :many
+SELECT
+	cart_item.id,
+	cart_item.cart_id,
+	cart_item.quantity,
+	product.price AS price,
+	product_inventory.quantity AS qty_in_stock,
+	float8(CASE
+		WHEN product_discount.active THEN (product.price * (1 - product_discount.discount_percent / 100) * cart_item.quantity)
+		ELSE (product.price * cart_item.quantity )
+	END) AS total,
+	product_discount.discount_percent AS discount_percent,
+	product_discount.active AS discount_active
+FROM cart_item
+LEFT JOIN product ON cart_item.product_id = product.id
+LEFT JOIN product_discount ON product.discount_id = product_discount.id
+LEFT JOIN product_inventory ON product.inventory_id = product_inventory.id
+WHERE cart_item.cart_id = $1
+LIMIT $2
+OFFSET $3;
 
 -- name: GetCartProductList :many
 SELECT * FROM cart_item
@@ -60,7 +88,7 @@ SELECT
 FROM (
 	SELECT
 		CASE
-			WHEN product_discount.active THEN (product.price * (1 + product_discount.discount_percent / 100) * cart_item.quantity)
+			WHEN product_discount.active THEN (product.price * (1 - product_discount.discount_percent / 100) * cart_item.quantity)
 			ELSE (product.price * cart_item.quantity )
 		END AS price
 	FROM cart_item

@@ -114,7 +114,8 @@ func TestAddToCart(t *testing.T) {
 	} else {
 		expectedTotal = float64(cartItemDetail.Quantity) * cartItemDetail.Price.Float64
 	}
-	require.Equal(t, expectedTotal, total)
+	require.True(t, util.WithinTolerance(expectedTotal, total, util.CurrencyTolerance))
+	require.True(t, util.WithinTolerance(expectedTotal, cartItemDetail.Total, util.CurrencyTolerance))
 }
 
 func TestDeleteCart(t *testing.T) {

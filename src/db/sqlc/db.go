@@ -66,6 +66,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getCartItemDetailStmt, err = db.PrepareContext(ctx, getCartItemDetail); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCartItemDetail: %w", err)
 	}
+	if q.getCartProductDetailListStmt, err = db.PrepareContext(ctx, getCartProductDetailList); err != nil {
+		return nil, fmt.Errorf("error preparing query GetCartProductDetailList: %w", err)
+	}
 	if q.getCartProductListStmt, err = db.PrepareContext(ctx, getCartProductList); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCartProductList: %w", err)
 	}
@@ -199,6 +202,11 @@ func (q *Queries) Close() error {
 	if q.getCartItemDetailStmt != nil {
 		if cerr := q.getCartItemDetailStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getCartItemDetailStmt: %w", cerr)
+		}
+	}
+	if q.getCartProductDetailListStmt != nil {
+		if cerr := q.getCartProductDetailListStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getCartProductDetailListStmt: %w", cerr)
 		}
 	}
 	if q.getCartProductListStmt != nil {
@@ -338,81 +346,83 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                         DBTX
-	tx                         *sql.Tx
-	addDiscountStmt            *sql.Stmt
-	addToCartStmt              *sql.Stmt
-	createCartStmt             *sql.Stmt
-	createCategoryStmt         *sql.Stmt
-	createProductStmt          *sql.Stmt
-	createProductDiscountStmt  *sql.Stmt
-	createProductInventoryStmt *sql.Stmt
-	createUserAddressStmt      *sql.Stmt
-	createUserCredentialStmt   *sql.Stmt
-	createUserInfoStmt         *sql.Stmt
-	deleteCartStmt             *sql.Stmt
-	getAddressStmt             *sql.Stmt
-	getCartByIDStmt            *sql.Stmt
-	getCartItemDetailStmt      *sql.Stmt
-	getCartProductListStmt     *sql.Stmt
-	getCategoryDetailStmt      *sql.Stmt
-	getCategoryForUpdateStmt   *sql.Stmt
-	getDiscountDetailStmt      *sql.Stmt
-	getInventoryDetailStmt     *sql.Stmt
-	getListAddressesStmt       *sql.Stmt
-	getListCategoriesStmt      *sql.Stmt
-	getNumberAddressesStmt     *sql.Stmt
-	getProductDetailStmt       *sql.Stmt
-	getProductListStmt         *sql.Stmt
-	getTotalStmt               *sql.Stmt
-	getUserCredentialStmt      *sql.Stmt
-	getUserInfoByIDStmt        *sql.Stmt
-	getUserInfoByUserIDStmt    *sql.Stmt
-	removeDiscountStmt         *sql.Stmt
-	removeItemStmt             *sql.Stmt
-	updateCartItemQtyStmt      *sql.Stmt
-	updateCategoryStmt         *sql.Stmt
-	updateDiscountStmt         *sql.Stmt
-	updateProductInventoryStmt *sql.Stmt
+	db                           DBTX
+	tx                           *sql.Tx
+	addDiscountStmt              *sql.Stmt
+	addToCartStmt                *sql.Stmt
+	createCartStmt               *sql.Stmt
+	createCategoryStmt           *sql.Stmt
+	createProductStmt            *sql.Stmt
+	createProductDiscountStmt    *sql.Stmt
+	createProductInventoryStmt   *sql.Stmt
+	createUserAddressStmt        *sql.Stmt
+	createUserCredentialStmt     *sql.Stmt
+	createUserInfoStmt           *sql.Stmt
+	deleteCartStmt               *sql.Stmt
+	getAddressStmt               *sql.Stmt
+	getCartByIDStmt              *sql.Stmt
+	getCartItemDetailStmt        *sql.Stmt
+	getCartProductDetailListStmt *sql.Stmt
+	getCartProductListStmt       *sql.Stmt
+	getCategoryDetailStmt        *sql.Stmt
+	getCategoryForUpdateStmt     *sql.Stmt
+	getDiscountDetailStmt        *sql.Stmt
+	getInventoryDetailStmt       *sql.Stmt
+	getListAddressesStmt         *sql.Stmt
+	getListCategoriesStmt        *sql.Stmt
+	getNumberAddressesStmt       *sql.Stmt
+	getProductDetailStmt         *sql.Stmt
+	getProductListStmt           *sql.Stmt
+	getTotalStmt                 *sql.Stmt
+	getUserCredentialStmt        *sql.Stmt
+	getUserInfoByIDStmt          *sql.Stmt
+	getUserInfoByUserIDStmt      *sql.Stmt
+	removeDiscountStmt           *sql.Stmt
+	removeItemStmt               *sql.Stmt
+	updateCartItemQtyStmt        *sql.Stmt
+	updateCategoryStmt           *sql.Stmt
+	updateDiscountStmt           *sql.Stmt
+	updateProductInventoryStmt   *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                         tx,
-		tx:                         tx,
-		addDiscountStmt:            q.addDiscountStmt,
-		addToCartStmt:              q.addToCartStmt,
-		createCartStmt:             q.createCartStmt,
-		createCategoryStmt:         q.createCategoryStmt,
-		createProductStmt:          q.createProductStmt,
-		createProductDiscountStmt:  q.createProductDiscountStmt,
-		createProductInventoryStmt: q.createProductInventoryStmt,
-		createUserAddressStmt:      q.createUserAddressStmt,
-		createUserCredentialStmt:   q.createUserCredentialStmt,
-		createUserInfoStmt:         q.createUserInfoStmt,
-		deleteCartStmt:             q.deleteCartStmt,
-		getAddressStmt:             q.getAddressStmt,
-		getCartByIDStmt:            q.getCartByIDStmt,
-		getCartItemDetailStmt:      q.getCartItemDetailStmt,
-		getCartProductListStmt:     q.getCartProductListStmt,
-		getCategoryDetailStmt:      q.getCategoryDetailStmt,
-		getCategoryForUpdateStmt:   q.getCategoryForUpdateStmt,
-		getDiscountDetailStmt:      q.getDiscountDetailStmt,
-		getInventoryDetailStmt:     q.getInventoryDetailStmt,
-		getListAddressesStmt:       q.getListAddressesStmt,
-		getListCategoriesStmt:      q.getListCategoriesStmt,
-		getNumberAddressesStmt:     q.getNumberAddressesStmt,
-		getProductDetailStmt:       q.getProductDetailStmt,
-		getProductListStmt:         q.getProductListStmt,
-		getTotalStmt:               q.getTotalStmt,
-		getUserCredentialStmt:      q.getUserCredentialStmt,
-		getUserInfoByIDStmt:        q.getUserInfoByIDStmt,
-		getUserInfoByUserIDStmt:    q.getUserInfoByUserIDStmt,
-		removeDiscountStmt:         q.removeDiscountStmt,
-		removeItemStmt:             q.removeItemStmt,
-		updateCartItemQtyStmt:      q.updateCartItemQtyStmt,
-		updateCategoryStmt:         q.updateCategoryStmt,
-		updateDiscountStmt:         q.updateDiscountStmt,
-		updateProductInventoryStmt: q.updateProductInventoryStmt,
+		db:                           tx,
+		tx:                           tx,
+		addDiscountStmt:              q.addDiscountStmt,
+		addToCartStmt:                q.addToCartStmt,
+		createCartStmt:               q.createCartStmt,
+		createCategoryStmt:           q.createCategoryStmt,
+		createProductStmt:            q.createProductStmt,
+		createProductDiscountStmt:    q.createProductDiscountStmt,
+		createProductInventoryStmt:   q.createProductInventoryStmt,
+		createUserAddressStmt:        q.createUserAddressStmt,
+		createUserCredentialStmt:     q.createUserCredentialStmt,
+		createUserInfoStmt:           q.createUserInfoStmt,
+		deleteCartStmt:               q.deleteCartStmt,
+		getAddressStmt:               q.getAddressStmt,
+		getCartByIDStmt:              q.getCartByIDStmt,
+		getCartItemDetailStmt:        q.getCartItemDetailStmt,
+		getCartProductDetailListStmt: q.getCartProductDetailListStmt,
+		getCartProductListStmt:       q.getCartProductListStmt,
+		getCategoryDetailStmt:        q.getCategoryDetailStmt,
+		getCategoryForUpdateStmt:     q.getCategoryForUpdateStmt,
+		getDiscountDetailStmt:        q.getDiscountDetailStmt,
+		getInventoryDetailStmt:       q.getInventoryDetailStmt,
+		getListAddressesStmt:         q.getListAddressesStmt,
+		getListCategoriesStmt:        q.getListCategoriesStmt,
+		getNumberAddressesStmt:       q.getNumberAddressesStmt,
+		getProductDetailStmt:         q.getProductDetailStmt,
+		getProductListStmt:           q.getProductListStmt,
+		getTotalStmt:                 q.getTotalStmt,
+		getUserCredentialStmt:        q.getUserCredentialStmt,
+		getUserInfoByIDStmt:          q.getUserInfoByIDStmt,
+		getUserInfoByUserIDStmt:      q.getUserInfoByUserIDStmt,
+		removeDiscountStmt:           q.removeDiscountStmt,
+		removeItemStmt:               q.removeItemStmt,
+		updateCartItemQtyStmt:        q.updateCartItemQtyStmt,
+		updateCategoryStmt:           q.updateCategoryStmt,
+		updateDiscountStmt:           q.updateDiscountStmt,
+		updateProductInventoryStmt:   q.updateProductInventoryStmt,
 	}
 }
