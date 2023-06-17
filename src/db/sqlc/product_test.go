@@ -17,7 +17,7 @@ func CreateRandomInventory(t *testing.T) ProductInventory {
 
 	arg := CreateProductInventoryParams{
 		ID:       id,
-		Quantity: int32(util.RandomInt(1, 20)),
+		Quantity: int32(util.RandomInt(3, 20)),
 	}
 
 	productInventory, err := testQueries.CreateProductInventory(context.Background(), arg)

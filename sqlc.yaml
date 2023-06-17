@@ -16,3 +16,11 @@ packages:
     emit_exact_table_names: false
     emit_json_tags: true
     emit_empty_slices: true
+    emit_all_enum_values: true
+overrides:
+  - db_type: "order_status"
+    go_type: "shopping-cart/src/util.OrderStatus"
+  - db_type: "payment_status"
+    go_type: "shopping-cart/src/util.PaymentStatus"
+  - db_type: "payment_type"
+    go_type: "shopping-cart/src/util.PaymentType"

@@ -39,7 +39,6 @@ CREATE TABLE "order_item" (
 
 CREATE TABLE "payment_detail" (
   "id" uuid PRIMARY KEY,
-  "order_id" uuid NOT NULL,
   "amount" float8 NOT NULL,
   "type" payment_type NOT NULL,
   "status" payment_status NOT NULL,
@@ -55,5 +54,3 @@ ALTER TABLE "order_detail" ADD FOREIGN KEY ("payment_id") REFERENCES "payment_de
 ALTER TABLE "order_item" ADD FOREIGN KEY ("order_id") REFERENCES "order_detail" ("id");
 
 ALTER TABLE "order_item" ADD FOREIGN KEY ("product_id") REFERENCES "product" ("id");
-
-ALTER TABLE "payment_detail" ADD FOREIGN KEY ("order_id") REFERENCES "order_detail" ("id");

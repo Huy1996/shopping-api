@@ -15,6 +15,7 @@ type Querier interface {
 	AddToCart(ctx context.Context, arg AddToCartParams) (CartItem, error)
 	CreateCart(ctx context.Context, arg CreateCartParams) (UserCart, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (ProductCategory, error)
+	CreatePaymentRecord(ctx context.Context, arg CreatePaymentRecordParams) (PaymentDetail, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
 	CreateProductDiscount(ctx context.Context, arg CreateProductDiscountParams) (ProductDiscount, error)
 	CreateProductInventory(ctx context.Context, arg CreateProductInventoryParams) (ProductInventory, error)
@@ -34,6 +35,7 @@ type Querier interface {
 	GetListAddresses(ctx context.Context, arg GetListAddressesParams) ([]UserAddress, error)
 	GetListCategories(ctx context.Context) ([]ProductCategory, error)
 	GetNumberAddresses(ctx context.Context, owner uuid.UUID) (int64, error)
+	GetPaymentRecord(ctx context.Context, id uuid.UUID) (PaymentDetail, error)
 	GetProductDetail(ctx context.Context, id uuid.UUID) (GetProductDetailRow, error)
 	GetProductList(ctx context.Context, arg GetProductListParams) ([]Product, error)
 	GetTotal(ctx context.Context, cartID uuid.UUID) (float64, error)
@@ -45,6 +47,7 @@ type Querier interface {
 	UpdateCartItemQty(ctx context.Context, arg UpdateCartItemQtyParams) (CartItem, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (ProductCategory, error)
 	UpdateDiscount(ctx context.Context, arg UpdateDiscountParams) (ProductDiscount, error)
+	UpdatePaymentStatus(ctx context.Context, arg UpdatePaymentStatusParams) (PaymentDetail, error)
 	UpdateProductInventory(ctx context.Context, arg UpdateProductInventoryParams) (ProductInventory, error)
 }
 
