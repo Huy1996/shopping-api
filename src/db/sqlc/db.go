@@ -36,6 +36,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createCategoryStmt, err = db.PrepareContext(ctx, createCategory); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateCategory: %w", err)
 	}
+	if q.createOrderItemStmt, err = db.PrepareContext(ctx, createOrderItem); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateOrderItem: %w", err)
+	}
+	if q.createOrderRecordStmt, err = db.PrepareContext(ctx, createOrderRecord); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateOrderRecord: %w", err)
+	}
 	if q.createPaymentRecordStmt, err = db.PrepareContext(ctx, createPaymentRecord); err != nil {
 		return nil, fmt.Errorf("error preparing query CreatePaymentRecord: %w", err)
 	}
@@ -96,6 +102,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getNumberAddressesStmt, err = db.PrepareContext(ctx, getNumberAddresses); err != nil {
 		return nil, fmt.Errorf("error preparing query GetNumberAddresses: %w", err)
 	}
+	if q.getOrderItemListStmt, err = db.PrepareContext(ctx, getOrderItemList); err != nil {
+		return nil, fmt.Errorf("error preparing query GetOrderItemList: %w", err)
+	}
 	if q.getPaymentRecordStmt, err = db.PrepareContext(ctx, getPaymentRecord); err != nil {
 		return nil, fmt.Errorf("error preparing query GetPaymentRecord: %w", err)
 	}
@@ -116,6 +125,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.getUserInfoByUserIDStmt, err = db.PrepareContext(ctx, getUserInfoByUserID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserInfoByUserID: %w", err)
+	}
+	if q.getUserOrderSummaryStmt, err = db.PrepareContext(ctx, getUserOrderSummary); err != nil {
+		return nil, fmt.Errorf("error preparing query GetUserOrderSummary: %w", err)
 	}
 	if q.removeDiscountStmt, err = db.PrepareContext(ctx, removeDiscount); err != nil {
 		return nil, fmt.Errorf("error preparing query RemoveDiscount: %w", err)
@@ -161,6 +173,16 @@ func (q *Queries) Close() error {
 	if q.createCategoryStmt != nil {
 		if cerr := q.createCategoryStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createCategoryStmt: %w", cerr)
+		}
+	}
+	if q.createOrderItemStmt != nil {
+		if cerr := q.createOrderItemStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createOrderItemStmt: %w", cerr)
+		}
+	}
+	if q.createOrderRecordStmt != nil {
+		if cerr := q.createOrderRecordStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createOrderRecordStmt: %w", cerr)
 		}
 	}
 	if q.createPaymentRecordStmt != nil {
@@ -263,6 +285,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getNumberAddressesStmt: %w", cerr)
 		}
 	}
+	if q.getOrderItemListStmt != nil {
+		if cerr := q.getOrderItemListStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getOrderItemListStmt: %w", cerr)
+		}
+	}
 	if q.getPaymentRecordStmt != nil {
 		if cerr := q.getPaymentRecordStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getPaymentRecordStmt: %w", cerr)
@@ -296,6 +323,11 @@ func (q *Queries) Close() error {
 	if q.getUserInfoByUserIDStmt != nil {
 		if cerr := q.getUserInfoByUserIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getUserInfoByUserIDStmt: %w", cerr)
+		}
+	}
+	if q.getUserOrderSummaryStmt != nil {
+		if cerr := q.getUserOrderSummaryStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getUserOrderSummaryStmt: %w", cerr)
 		}
 	}
 	if q.removeDiscountStmt != nil {
@@ -376,6 +408,8 @@ type Queries struct {
 	addToCartStmt                *sql.Stmt
 	createCartStmt               *sql.Stmt
 	createCategoryStmt           *sql.Stmt
+	createOrderItemStmt          *sql.Stmt
+	createOrderRecordStmt        *sql.Stmt
 	createPaymentRecordStmt      *sql.Stmt
 	createProductStmt            *sql.Stmt
 	createProductDiscountStmt    *sql.Stmt
@@ -396,6 +430,7 @@ type Queries struct {
 	getListAddressesStmt         *sql.Stmt
 	getListCategoriesStmt        *sql.Stmt
 	getNumberAddressesStmt       *sql.Stmt
+	getOrderItemListStmt         *sql.Stmt
 	getPaymentRecordStmt         *sql.Stmt
 	getProductDetailStmt         *sql.Stmt
 	getProductListStmt           *sql.Stmt
@@ -403,6 +438,7 @@ type Queries struct {
 	getUserCredentialStmt        *sql.Stmt
 	getUserInfoByIDStmt          *sql.Stmt
 	getUserInfoByUserIDStmt      *sql.Stmt
+	getUserOrderSummaryStmt      *sql.Stmt
 	removeDiscountStmt           *sql.Stmt
 	removeItemStmt               *sql.Stmt
 	updateCartItemQtyStmt        *sql.Stmt
@@ -420,6 +456,8 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		addToCartStmt:                q.addToCartStmt,
 		createCartStmt:               q.createCartStmt,
 		createCategoryStmt:           q.createCategoryStmt,
+		createOrderItemStmt:          q.createOrderItemStmt,
+		createOrderRecordStmt:        q.createOrderRecordStmt,
 		createPaymentRecordStmt:      q.createPaymentRecordStmt,
 		createProductStmt:            q.createProductStmt,
 		createProductDiscountStmt:    q.createProductDiscountStmt,
@@ -440,6 +478,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getListAddressesStmt:         q.getListAddressesStmt,
 		getListCategoriesStmt:        q.getListCategoriesStmt,
 		getNumberAddressesStmt:       q.getNumberAddressesStmt,
+		getOrderItemListStmt:         q.getOrderItemListStmt,
 		getPaymentRecordStmt:         q.getPaymentRecordStmt,
 		getProductDetailStmt:         q.getProductDetailStmt,
 		getProductListStmt:           q.getProductListStmt,
@@ -447,6 +486,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getUserCredentialStmt:        q.getUserCredentialStmt,
 		getUserInfoByIDStmt:          q.getUserInfoByIDStmt,
 		getUserInfoByUserIDStmt:      q.getUserInfoByUserIDStmt,
+		getUserOrderSummaryStmt:      q.getUserOrderSummaryStmt,
 		removeDiscountStmt:           q.removeDiscountStmt,
 		removeItemStmt:               q.removeItemStmt,
 		updateCartItemQtyStmt:        q.updateCartItemQtyStmt,

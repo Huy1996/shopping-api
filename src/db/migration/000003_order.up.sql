@@ -32,7 +32,7 @@ CREATE TABLE "order_item" (
   "order_id" uuid NOT NULL,
   "product_id" uuid NOT NULL,
   "quantity" int NOT NULL,
-  "status" order_status,
+  "status" order_status NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "updated_at" timestamptz NOT NULL DEFAULT '0001-01-01 00:00:00Z'
 );

@@ -188,13 +188,13 @@ type OrderDetail struct {
 }
 
 type OrderItem struct {
-	ID        uuid.UUID       `json:"id"`
-	OrderID   uuid.UUID       `json:"order_id"`
-	ProductID uuid.UUID       `json:"product_id"`
-	Quantity  int32           `json:"quantity"`
-	Status    NullOrderStatus `json:"status"`
-	CreatedAt time.Time       `json:"created_at"`
-	UpdatedAt time.Time       `json:"updated_at"`
+	ID        uuid.UUID        `json:"id"`
+	OrderID   uuid.UUID        `json:"order_id"`
+	ProductID uuid.UUID        `json:"product_id"`
+	Quantity  int32            `json:"quantity"`
+	Status    util.OrderStatus `json:"status"`
+	CreatedAt time.Time        `json:"created_at"`
+	UpdatedAt time.Time        `json:"updated_at"`
 }
 
 type PaymentDetail struct {

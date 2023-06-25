@@ -94,3 +94,54 @@ Table product_discount as PD {
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: '0001-01-01 00:00:00Z']
 }
+
+//----------//
+Table order_detail as OD {
+  id uuid [pk]
+  user_id uuid [ref: > UI.id, not null]
+  total float8 [not null]
+  payment_id uuid [ref: - PM.id, not null]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: '0001-01-01 00:00:00Z']
+}
+
+Table order_item as OI {
+  id uuid [pk]
+  order_id uuid [ref: > OD.id, not null]
+  product_id uuid [ref: > P.id, not null]
+  quantity int [not null]
+  status order_status
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: '0001-01-01 00:00:00Z']
+}
+
+Enum order_status {
+  "Preparing"
+  "Shipped"
+  "Deliveried"
+  "Pending Cancel"
+  "Canceled"
+}
+
+//--------//
+Table payment_detail as PM {
+  id uuid [pk]
+  amount float8 [not null]
+  type payment_type [not null]
+  status payment_status [not null]
+  card_number varchar [not null]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: '0001-01-01 00:00:00Z']
+}
+
+Enum payment_status {
+  "Pending"
+  "Successed"
+  "Rejected"
+}
+
+Enum payment_type {
+  "VISA"
+  "MASTER CARD"
+  "AMERICAN EXPRESS"
+}

@@ -106,9 +106,12 @@ SELECT
 	product_discount.discount_percent AS discount_percent,
 	product_discount.active AS discount_active
 FROM cart_item
-LEFT JOIN product ON cart_item.product_id = product.id
-LEFT JOIN product_discount ON product.discount_id = product_discount.id
-LEFT JOIN product_inventory ON product.inventory_id = product_inventory.id
+LEFT JOIN product
+    ON cart_item.product_id = product.id
+LEFT JOIN product_discount
+    ON product.discount_id = product_discount.id
+LEFT JOIN product_inventory
+    ON product.inventory_id = product_inventory.id
 WHERE cart_item.id = $1
 `
 
@@ -153,9 +156,12 @@ SELECT
 	product_discount.discount_percent AS discount_percent,
 	product_discount.active AS discount_active
 FROM cart_item
-LEFT JOIN product ON cart_item.product_id = product.id
-LEFT JOIN product_discount ON product.discount_id = product_discount.id
-LEFT JOIN product_inventory ON product.inventory_id = product_inventory.id
+LEFT JOIN product
+    ON cart_item.product_id = product.id
+LEFT JOIN product_discount
+    ON product.discount_id = product_discount.id
+LEFT JOIN product_inventory
+    ON product.inventory_id = product_inventory.id
 WHERE cart_item.cart_id = $1
 LIMIT $2
 OFFSET $3
@@ -261,8 +267,10 @@ FROM (
 			ELSE (product.price * cart_item.quantity )
 		END AS price
 	FROM cart_item
-	LEFT JOIN product ON cart_item.product_id = product.id
-	LEFT JOIN product_discount ON product.discount_id = product_discount.id
+	LEFT JOIN product
+	    ON cart_item.product_id = product.id
+	LEFT JOIN product_discount
+	    ON product.discount_id = product_discount.id
 	WHERE cart_item.cart_id = $1
 ) AS a
 `
