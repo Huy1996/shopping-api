@@ -36,6 +36,15 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createCategoryStmt, err = db.PrepareContext(ctx, createCategory); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateCategory: %w", err)
 	}
+	if q.createOrderItemStmt, err = db.PrepareContext(ctx, createOrderItem); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateOrderItem: %w", err)
+	}
+	if q.createOrderRecordStmt, err = db.PrepareContext(ctx, createOrderRecord); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateOrderRecord: %w", err)
+	}
+	if q.createPaymentRecordStmt, err = db.PrepareContext(ctx, createPaymentRecord); err != nil {
+		return nil, fmt.Errorf("error preparing query CreatePaymentRecord: %w", err)
+	}
 	if q.createProductStmt, err = db.PrepareContext(ctx, createProduct); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateProduct: %w", err)
 	}
@@ -93,6 +102,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getNumberAddressesStmt, err = db.PrepareContext(ctx, getNumberAddresses); err != nil {
 		return nil, fmt.Errorf("error preparing query GetNumberAddresses: %w", err)
 	}
+	if q.getOrderItemListStmt, err = db.PrepareContext(ctx, getOrderItemList); err != nil {
+		return nil, fmt.Errorf("error preparing query GetOrderItemList: %w", err)
+	}
+	if q.getPaymentRecordStmt, err = db.PrepareContext(ctx, getPaymentRecord); err != nil {
+		return nil, fmt.Errorf("error preparing query GetPaymentRecord: %w", err)
+	}
 	if q.getProductDetailStmt, err = db.PrepareContext(ctx, getProductDetail); err != nil {
 		return nil, fmt.Errorf("error preparing query GetProductDetail: %w", err)
 	}
@@ -111,6 +126,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getUserInfoByUserIDStmt, err = db.PrepareContext(ctx, getUserInfoByUserID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserInfoByUserID: %w", err)
 	}
+	if q.getUserOrderSummaryStmt, err = db.PrepareContext(ctx, getUserOrderSummary); err != nil {
+		return nil, fmt.Errorf("error preparing query GetUserOrderSummary: %w", err)
+	}
 	if q.removeDiscountStmt, err = db.PrepareContext(ctx, removeDiscount); err != nil {
 		return nil, fmt.Errorf("error preparing query RemoveDiscount: %w", err)
 	}
@@ -125,6 +143,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.updateDiscountStmt, err = db.PrepareContext(ctx, updateDiscount); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateDiscount: %w", err)
+	}
+	if q.updatePaymentStatusStmt, err = db.PrepareContext(ctx, updatePaymentStatus); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdatePaymentStatus: %w", err)
 	}
 	if q.updateProductInventoryStmt, err = db.PrepareContext(ctx, updateProductInventory); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateProductInventory: %w", err)
@@ -152,6 +173,21 @@ func (q *Queries) Close() error {
 	if q.createCategoryStmt != nil {
 		if cerr := q.createCategoryStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createCategoryStmt: %w", cerr)
+		}
+	}
+	if q.createOrderItemStmt != nil {
+		if cerr := q.createOrderItemStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createOrderItemStmt: %w", cerr)
+		}
+	}
+	if q.createOrderRecordStmt != nil {
+		if cerr := q.createOrderRecordStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createOrderRecordStmt: %w", cerr)
+		}
+	}
+	if q.createPaymentRecordStmt != nil {
+		if cerr := q.createPaymentRecordStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createPaymentRecordStmt: %w", cerr)
 		}
 	}
 	if q.createProductStmt != nil {
@@ -249,6 +285,16 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getNumberAddressesStmt: %w", cerr)
 		}
 	}
+	if q.getOrderItemListStmt != nil {
+		if cerr := q.getOrderItemListStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getOrderItemListStmt: %w", cerr)
+		}
+	}
+	if q.getPaymentRecordStmt != nil {
+		if cerr := q.getPaymentRecordStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getPaymentRecordStmt: %w", cerr)
+		}
+	}
 	if q.getProductDetailStmt != nil {
 		if cerr := q.getProductDetailStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getProductDetailStmt: %w", cerr)
@@ -279,6 +325,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getUserInfoByUserIDStmt: %w", cerr)
 		}
 	}
+	if q.getUserOrderSummaryStmt != nil {
+		if cerr := q.getUserOrderSummaryStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getUserOrderSummaryStmt: %w", cerr)
+		}
+	}
 	if q.removeDiscountStmt != nil {
 		if cerr := q.removeDiscountStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing removeDiscountStmt: %w", cerr)
@@ -302,6 +353,11 @@ func (q *Queries) Close() error {
 	if q.updateDiscountStmt != nil {
 		if cerr := q.updateDiscountStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateDiscountStmt: %w", cerr)
+		}
+	}
+	if q.updatePaymentStatusStmt != nil {
+		if cerr := q.updatePaymentStatusStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updatePaymentStatusStmt: %w", cerr)
 		}
 	}
 	if q.updateProductInventoryStmt != nil {
@@ -352,6 +408,9 @@ type Queries struct {
 	addToCartStmt                *sql.Stmt
 	createCartStmt               *sql.Stmt
 	createCategoryStmt           *sql.Stmt
+	createOrderItemStmt          *sql.Stmt
+	createOrderRecordStmt        *sql.Stmt
+	createPaymentRecordStmt      *sql.Stmt
 	createProductStmt            *sql.Stmt
 	createProductDiscountStmt    *sql.Stmt
 	createProductInventoryStmt   *sql.Stmt
@@ -371,17 +430,21 @@ type Queries struct {
 	getListAddressesStmt         *sql.Stmt
 	getListCategoriesStmt        *sql.Stmt
 	getNumberAddressesStmt       *sql.Stmt
+	getOrderItemListStmt         *sql.Stmt
+	getPaymentRecordStmt         *sql.Stmt
 	getProductDetailStmt         *sql.Stmt
 	getProductListStmt           *sql.Stmt
 	getTotalStmt                 *sql.Stmt
 	getUserCredentialStmt        *sql.Stmt
 	getUserInfoByIDStmt          *sql.Stmt
 	getUserInfoByUserIDStmt      *sql.Stmt
+	getUserOrderSummaryStmt      *sql.Stmt
 	removeDiscountStmt           *sql.Stmt
 	removeItemStmt               *sql.Stmt
 	updateCartItemQtyStmt        *sql.Stmt
 	updateCategoryStmt           *sql.Stmt
 	updateDiscountStmt           *sql.Stmt
+	updatePaymentStatusStmt      *sql.Stmt
 	updateProductInventoryStmt   *sql.Stmt
 }
 
@@ -393,6 +456,9 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		addToCartStmt:                q.addToCartStmt,
 		createCartStmt:               q.createCartStmt,
 		createCategoryStmt:           q.createCategoryStmt,
+		createOrderItemStmt:          q.createOrderItemStmt,
+		createOrderRecordStmt:        q.createOrderRecordStmt,
+		createPaymentRecordStmt:      q.createPaymentRecordStmt,
 		createProductStmt:            q.createProductStmt,
 		createProductDiscountStmt:    q.createProductDiscountStmt,
 		createProductInventoryStmt:   q.createProductInventoryStmt,
@@ -412,17 +478,21 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getListAddressesStmt:         q.getListAddressesStmt,
 		getListCategoriesStmt:        q.getListCategoriesStmt,
 		getNumberAddressesStmt:       q.getNumberAddressesStmt,
+		getOrderItemListStmt:         q.getOrderItemListStmt,
+		getPaymentRecordStmt:         q.getPaymentRecordStmt,
 		getProductDetailStmt:         q.getProductDetailStmt,
 		getProductListStmt:           q.getProductListStmt,
 		getTotalStmt:                 q.getTotalStmt,
 		getUserCredentialStmt:        q.getUserCredentialStmt,
 		getUserInfoByIDStmt:          q.getUserInfoByIDStmt,
 		getUserInfoByUserIDStmt:      q.getUserInfoByUserIDStmt,
+		getUserOrderSummaryStmt:      q.getUserOrderSummaryStmt,
 		removeDiscountStmt:           q.removeDiscountStmt,
 		removeItemStmt:               q.removeItemStmt,
 		updateCartItemQtyStmt:        q.updateCartItemQtyStmt,
 		updateCategoryStmt:           q.updateCategoryStmt,
 		updateDiscountStmt:           q.updateDiscountStmt,
+		updatePaymentStatusStmt:      q.updatePaymentStatusStmt,
 		updateProductInventoryStmt:   q.updateProductInventoryStmt,
 	}
 }
