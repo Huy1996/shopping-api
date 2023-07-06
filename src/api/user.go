@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// Create User Request
 type createUserRequest struct {
 	Username    string `json:"username" binding:"required,alphanum"`
 	Password    string `json:"password" binding:"required,min=6"`
@@ -79,3 +80,5 @@ func (server *Server) createUser(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, newUserResponse(result.UserCredential, result.UserInfo))
 }
+
+// Login User Request
