@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 	"net/http"
 	db "shopping-cart/src/db/sqlc"
 	"shopping-cart/src/util"
@@ -41,7 +42,6 @@ func newUserResponse(userCredential db.UserCredential, userInfo db.UserInfo) Use
 }
 
 func (server *Server) createUser(ctx *gin.Context) {
-	// TODO: Add new route function
 	var req createUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -66,6 +66,13 @@ func (server *Server) createUser(ctx *gin.Context) {
 
 	result, err := server.store.CreateUserTx(ctx, arg)
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Code.Name() {
+			case "unique_violation":
+				ctx.JSON(http.StatusForbidden, errorResponse(err))
+				return
+			}
+		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
