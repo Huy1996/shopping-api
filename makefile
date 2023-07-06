@@ -41,4 +41,8 @@ test:
 server:
 	go run main.go
 
-.PHONY: postgres create-db drop-db migrate-up migrate-up-1 migrate-down migrate-down-1 sqlc server
+mock:
+	mockgen -package mockdb -destination src/db/mock/store.go shopping-cart/src/db/sqlc Store
+
+
+.PHONY: postgres create-db drop-db migrate-up migrate-up-1 migrate-down migrate-down-1 sqlc server mock
