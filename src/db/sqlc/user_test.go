@@ -33,7 +33,6 @@ func CreateRandomUserCredential(t *testing.T) UserCredential {
 	require.Equal(t, arg.Username, userCredential.Username)
 	require.Equal(t, arg.HashedPassword, userCredential.HashedPassword)
 
-	require.False(t, userCredential.IsAdmin)
 	require.True(t, userCredential.PasswordChangedAt.IsZero())
 	require.NotZero(t, userCredential.CreatedAt)
 
@@ -111,7 +110,6 @@ func TestGetUserCredential(t *testing.T) {
 	require.Equal(t, userCredential1.Username, userCredential2.Username)
 	require.Equal(t, userCredential1.HashedPassword, userCredential2.HashedPassword)
 	require.Equal(t, userCredential1.Email, userCredential2.Email)
-	require.Equal(t, userCredential1.IsAdmin, userCredential2.IsAdmin)
 
 	require.WithinDuration(t, userCredential1.PasswordChangedAt, userCredential2.PasswordChangedAt, time.Second)
 	require.WithinDuration(t, userCredential1.CreatedAt, userCredential2.CreatedAt, time.Second)

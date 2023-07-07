@@ -266,7 +266,6 @@ type UserCredential struct {
 	HashedPassword    string    `json:"hashed_password"`
 	Email             string    `json:"email"`
 	PasswordChangedAt time.Time `json:"password_changed_at"`
-	IsAdmin           bool      `json:"is_admin"`
 	CreatedAt         time.Time `json:"created_at"`
 }
 

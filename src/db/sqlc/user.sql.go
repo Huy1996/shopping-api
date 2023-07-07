@@ -67,7 +67,7 @@ INSERT INTO user_credential (
     email
 ) VALUES (
     $1, $2, $3, $4
-) RETURNING id, username, hashed_password, email, password_changed_at, is_admin, created_at
+) RETURNING id, username, hashed_password, email, password_changed_at, created_at
 `
 
 type CreateUserCredentialParams struct {
@@ -91,7 +91,6 @@ func (q *Queries) CreateUserCredential(ctx context.Context, arg CreateUserCreden
 		&i.HashedPassword,
 		&i.Email,
 		&i.PasswordChangedAt,
-		&i.IsAdmin,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -224,7 +223,7 @@ func (q *Queries) GetNumberAddresses(ctx context.Context, owner uuid.UUID) (int6
 }
 
 const getUserCredential = `-- name: GetUserCredential :one
-SELECT id, username, hashed_password, email, password_changed_at, is_admin, created_at FROM user_credential
+SELECT id, username, hashed_password, email, password_changed_at, created_at FROM user_credential
 WHERE username = $1
 LIMIT 1
 `
@@ -238,7 +237,6 @@ func (q *Queries) GetUserCredential(ctx context.Context, username string) (UserC
 		&i.HashedPassword,
 		&i.Email,
 		&i.PasswordChangedAt,
-		&i.IsAdmin,
 		&i.CreatedAt,
 	)
 	return i, err
