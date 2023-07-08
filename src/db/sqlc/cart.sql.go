@@ -160,7 +160,7 @@ SELECT
 	cart_item.id,
 	cart_item.cart_id,
 	cart_item.quantity,
-	text(product.name),
+	text(product.name) AS name,
 	float8(product.price),
 	int2(product_inventory.quantity) AS qty_in_stock,
 	float8(CASE
@@ -191,7 +191,7 @@ type GetCartProductDetailListRow struct {
 	ID             uuid.UUID `json:"id"`
 	CartID         uuid.UUID `json:"cart_id"`
 	Quantity       int32     `json:"quantity"`
-	Text           string    `json:"text"`
+	Name           string    `json:"name"`
 	Float8         float64   `json:"float8"`
 	QtyInStock     int16     `json:"qty_in_stock"`
 	Total          float64   `json:"total"`
@@ -212,7 +212,7 @@ func (q *Queries) GetCartProductDetailList(ctx context.Context, arg GetCartProdu
 			&i.ID,
 			&i.CartID,
 			&i.Quantity,
-			&i.Text,
+			&i.Name,
 			&i.Float8,
 			&i.QtyInStock,
 			&i.Total,

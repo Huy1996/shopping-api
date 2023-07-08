@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -78,6 +79,71 @@ func (server *Server) getCartItemList(ctx *gin.Context) {
 	res := getCartItemListResponse{
 		Items: result,
 		Total: total,
+	}
+
+	ctx.JSON(http.StatusOK, res)
+}
+
+type removeFromCartParam struct {
+	ID string `uri:"id" binding:"required,uuid"`
+}
+
+type removeFromCartResult struct {
+	Total float64                          `json:"total"`
+	Items []db.GetCartProductDetailListRow `json:"items"`
+}
+
+func (server *Server) removeFromCart(ctx *gin.Context) {
+	var req removeFromCartParam
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	cartItemId, err := uuid.Parse(req.ID)
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	payload := ctx.Keys[authorizationPayloadKey].(*token.Payload)
+
+	cartItem, err := server.store.GetCartItemDetail(ctx, cartItemId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err))
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	if cartItem.CartID != payload.CartID {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("Unauthorized")))
+		return
+	}
+
+	result, err := server.store.RemoveFromCartTx(ctx, db.RemoveFromCartTxParam{
+		CartItemID: cartItemId,
+	})
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	cartItemList, err := server.store.GetCartProductDetailList(ctx, db.GetCartProductDetailListParams{
+		CartID: payload.CartID,
+		Limit:  server.config.LimitItemDisplay,
+		Offset: 0,
+	})
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	res := removeFromCartResult{
+		Total: result.Total,
+		Items: cartItemList,
 	}
 
 	ctx.JSON(http.StatusOK, res)

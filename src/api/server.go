@@ -57,6 +57,7 @@ func (server *Server) setupRouter() {
 	// routing require authorization
 	authRoutes.POST("/cart", server.addItemToCart)
 	authRoutes.GET("/cart", server.getCartItemList)
+	authRoutes.DELETE("/cart/:id", server.removeFromCart)
 
 	server.router = router
 }
