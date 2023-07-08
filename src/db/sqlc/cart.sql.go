@@ -91,6 +91,19 @@ func (q *Queries) GetCartByID(ctx context.Context, id uuid.UUID) (UserCart, erro
 	return i, err
 }
 
+const getCartByOwner = `-- name: GetCartByOwner :one
+SELECT id, owner FROM user_cart
+WHERE owner = $1
+LIMIT 1
+`
+
+func (q *Queries) GetCartByOwner(ctx context.Context, owner uuid.UUID) (UserCart, error) {
+	row := q.queryRow(ctx, q.getCartByOwnerStmt, getCartByOwner, owner)
+	var i UserCart
+	err := row.Scan(&i.ID, &i.Owner)
+	return i, err
+}
+
 const getCartItemDetail = `-- name: GetCartItemDetail :one
 SELECT
 	cart_item.id,
@@ -147,14 +160,15 @@ SELECT
 	cart_item.id,
 	cart_item.cart_id,
 	cart_item.quantity,
-	product.price AS price,
-	product_inventory.quantity AS qty_in_stock,
+	text(product.name),
+	float8(product.price),
+	int2(product_inventory.quantity) AS qty_in_stock,
 	float8(CASE
 		WHEN product_discount.active THEN (product.price * (1 - product_discount.discount_percent / 100) * cart_item.quantity)
 		ELSE (product.price * cart_item.quantity )
 	END) AS total,
-	product_discount.discount_percent AS discount_percent,
-	product_discount.active AS discount_active
+	float8(product_discount.discount_percent),
+	bool(product_discount.active) AS discount_active
 FROM cart_item
 LEFT JOIN product
     ON cart_item.product_id = product.id
@@ -174,14 +188,15 @@ type GetCartProductDetailListParams struct {
 }
 
 type GetCartProductDetailListRow struct {
-	ID              uuid.UUID       `json:"id"`
-	CartID          uuid.UUID       `json:"cart_id"`
-	Quantity        int32           `json:"quantity"`
-	Price           sql.NullFloat64 `json:"price"`
-	QtyInStock      sql.NullInt32   `json:"qty_in_stock"`
-	Total           float64         `json:"total"`
-	DiscountPercent sql.NullFloat64 `json:"discount_percent"`
-	DiscountActive  sql.NullBool    `json:"discount_active"`
+	ID             uuid.UUID `json:"id"`
+	CartID         uuid.UUID `json:"cart_id"`
+	Quantity       int32     `json:"quantity"`
+	Text           string    `json:"text"`
+	Float8         float64   `json:"float8"`
+	QtyInStock     int16     `json:"qty_in_stock"`
+	Total          float64   `json:"total"`
+	Float8_2       float64   `json:"float8_2"`
+	DiscountActive bool      `json:"discount_active"`
 }
 
 func (q *Queries) GetCartProductDetailList(ctx context.Context, arg GetCartProductDetailListParams) ([]GetCartProductDetailListRow, error) {
@@ -197,10 +212,11 @@ func (q *Queries) GetCartProductDetailList(ctx context.Context, arg GetCartProdu
 			&i.ID,
 			&i.CartID,
 			&i.Quantity,
-			&i.Price,
+			&i.Text,
+			&i.Float8,
 			&i.QtyInStock,
 			&i.Total,
-			&i.DiscountPercent,
+			&i.Float8_2,
 			&i.DiscountActive,
 		); err != nil {
 			return nil, err

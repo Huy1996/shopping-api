@@ -50,7 +50,7 @@ func EqCreateUserTxParam(arg db.CreateUserTxParams, password string) gomock.Matc
 }
 
 func TestCreateUserAPI(t *testing.T) {
-	userInfo, userCredential, password := randomAccount(t)
+	userInfo, userCredential, userCart, password := randomAccount(t)
 
 	testCases := []struct {
 		name          string
@@ -86,6 +86,7 @@ func TestCreateUserAPI(t *testing.T) {
 					Return(db.CreateUserTxResult{
 						UserCredential: userCredential,
 						UserInfo:       userInfo,
+						UserCart:       userCart,
 					}, nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
@@ -225,7 +226,7 @@ func TestCreateUserAPI(t *testing.T) {
 
 }
 
-func randomAccount(t *testing.T) (userInfo db.UserInfo, userCredential db.UserCredential, password string) {
+func randomAccount(t *testing.T) (userInfo db.UserInfo, userCredential db.UserCredential, userCart db.UserCart, password string) {
 	password = util.RandomString(10)
 
 	hashedPassword, err := util.HashPassword(password)
@@ -235,6 +236,9 @@ func randomAccount(t *testing.T) (userInfo db.UserInfo, userCredential db.UserCr
 	require.NoError(t, err)
 
 	userInfoID, err := uuid.NewRandom()
+	require.NoError(t, err)
+
+	cartID, err := uuid.NewRandom()
 	require.NoError(t, err)
 
 	userCredential = db.UserCredential{
@@ -251,6 +255,11 @@ func randomAccount(t *testing.T) (userInfo db.UserInfo, userCredential db.UserCr
 		FirstName:   util.RandomName(),
 		LastName:    util.RandomName(),
 		MiddleName:  util.RandomName(),
+	}
+
+	userCart = db.UserCart{
+		ID:    cartID,
+		Owner: userInfoID,
 	}
 
 	return
@@ -281,7 +290,7 @@ func requireBodyMatchCreateUser(t *testing.T, body *bytes.Buffer, userCredential
 }
 
 func TestLoginUserAPI(t *testing.T) {
-	userInfo, userCredential, password := randomAccount(t)
+	userInfo, userCredential, userCart, password := randomAccount(t)
 
 	testCases := []struct {
 		name          string
@@ -304,6 +313,10 @@ func TestLoginUserAPI(t *testing.T) {
 					GetUserInfoByUserID(gomock.Any(), gomock.Eq(userCredential.ID)).
 					Times(1).
 					Return(userInfo, nil)
+				store.EXPECT().
+					GetCartByOwner(gomock.Any(), gomock.Eq(userInfo.ID)).
+					Times(1).
+					Return(userCart, nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)

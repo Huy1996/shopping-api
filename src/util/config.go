@@ -13,6 +13,7 @@ type Config struct {
 	TokenSymmetricKey    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
+	LimitItemDisplay     int32         `mapstructure:"LIMIT_ITEM_DISPLAY"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

@@ -72,6 +72,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getCartByIDStmt, err = db.PrepareContext(ctx, getCartByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCartByID: %w", err)
 	}
+	if q.getCartByOwnerStmt, err = db.PrepareContext(ctx, getCartByOwner); err != nil {
+		return nil, fmt.Errorf("error preparing query GetCartByOwner: %w", err)
+	}
 	if q.getCartItemDetailStmt, err = db.PrepareContext(ctx, getCartItemDetail); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCartItemDetail: %w", err)
 	}
@@ -233,6 +236,11 @@ func (q *Queries) Close() error {
 	if q.getCartByIDStmt != nil {
 		if cerr := q.getCartByIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getCartByIDStmt: %w", cerr)
+		}
+	}
+	if q.getCartByOwnerStmt != nil {
+		if cerr := q.getCartByOwnerStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getCartByOwnerStmt: %w", cerr)
 		}
 	}
 	if q.getCartItemDetailStmt != nil {
@@ -420,6 +428,7 @@ type Queries struct {
 	deleteCartStmt               *sql.Stmt
 	getAddressStmt               *sql.Stmt
 	getCartByIDStmt              *sql.Stmt
+	getCartByOwnerStmt           *sql.Stmt
 	getCartItemDetailStmt        *sql.Stmt
 	getCartProductDetailListStmt *sql.Stmt
 	getCartProductListStmt       *sql.Stmt
@@ -468,6 +477,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		deleteCartStmt:               q.deleteCartStmt,
 		getAddressStmt:               q.getAddressStmt,
 		getCartByIDStmt:              q.getCartByIDStmt,
+		getCartByOwnerStmt:           q.getCartByOwnerStmt,
 		getCartItemDetailStmt:        q.getCartItemDetailStmt,
 		getCartProductDetailListStmt: q.getCartProductDetailListStmt,
 		getCartProductListStmt:       q.getCartProductListStmt,

@@ -1,6 +1,7 @@
 package token
 
 import (
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"shopping-cart/src/util"
 	"testing"
@@ -11,13 +12,14 @@ func TestPasetoMaker(t *testing.T) {
 	maker, err := NewPasetoMaker(util.RandomString(32))
 	require.NoError(t, err)
 
-	username := util.RandomName()
+	userID, err := uuid.NewRandom()
+	cartID, err := uuid.NewRandom()
 	duration := time.Minute
 
 	issuedAt := time.Now()
 	expiredAt := issuedAt.Add(duration)
 
-	token, payload, err := maker.CreateToken(username, duration)
+	token, payload, err := maker.CreateToken(userID, cartID, duration)
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
 	require.NotEmpty(t, payload)
@@ -27,7 +29,8 @@ func TestPasetoMaker(t *testing.T) {
 	require.NotEmpty(t, payload)
 
 	require.NotZero(t, payload.ID)
-	require.Equal(t, username, payload.Username)
+	require.Equal(t, userID, payload.UserID)
+	require.Equal(t, cartID, payload.CartID)
 	require.WithinDuration(t, issuedAt, payload.IssuedAt, time.Second)
 	require.WithinDuration(t, expiredAt, payload.ExpiredAt, time.Second)
 }
@@ -36,7 +39,13 @@ func TestExpiredPasetoToken(t *testing.T) {
 	maker, err := NewPasetoMaker(util.RandomString(32))
 	require.NoError(t, err)
 
-	token, payload, err := maker.CreateToken(util.RandomName(), -time.Minute)
+	userID, err := uuid.NewRandom()
+	require.NoError(t, err)
+
+	cartID, err := uuid.NewRandom()
+	require.NoError(t, err)
+
+	token, payload, err := maker.CreateToken(userID, cartID, -time.Minute)
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
 	require.NotEmpty(t, payload)

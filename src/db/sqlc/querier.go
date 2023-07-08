@@ -27,6 +27,7 @@ type Querier interface {
 	DeleteCart(ctx context.Context, owner uuid.UUID) error
 	GetAddress(ctx context.Context, id uuid.UUID) (UserAddress, error)
 	GetCartByID(ctx context.Context, id uuid.UUID) (UserCart, error)
+	GetCartByOwner(ctx context.Context, owner uuid.UUID) (UserCart, error)
 	GetCartItemDetail(ctx context.Context, id uuid.UUID) (GetCartItemDetailRow, error)
 	GetCartProductDetailList(ctx context.Context, arg GetCartProductDetailListParams) ([]GetCartProductDetailListRow, error)
 	GetCartProductList(ctx context.Context, arg GetCartProductListParams) ([]CartItem, error)

@@ -24,6 +24,7 @@ type createUserRequest struct {
 
 type UserResponse struct {
 	ID          uuid.UUID `json:"id"`
+	CartID      uuid.UUID `json:"cart_id"`
 	UserName    string    `json:"username"`
 	FirstName   string    `json:"first_name"`
 	LastName    string    `json:"last_name"`
@@ -33,9 +34,10 @@ type UserResponse struct {
 	CreatedAt   time.Time `json:"created_at"`
 }
 
-func newUserResponse(userCredential db.UserCredential, userInfo db.UserInfo) UserResponse {
+func newUserResponse(userCredential db.UserCredential, userInfo db.UserInfo, userCart db.UserCart) UserResponse {
 	return UserResponse{
 		ID:          userInfo.ID,
+		CartID:      userCart.ID,
 		UserName:    userCredential.Username,
 		FirstName:   userInfo.FirstName,
 		LastName:    userInfo.LastName,
@@ -82,7 +84,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	res := newUserResponse(result.UserCredential, result.UserInfo)
+	res := newUserResponse(result.UserCredential, result.UserInfo, result.UserCart)
 	ctx.JSON(http.StatusOK, res)
 }
 
@@ -134,8 +136,19 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
+	cartInfo, err := server.store.GetCartByOwner(ctx, userInfo.ID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
 	accessToken, accessPayload, err := server.tokenMaker.CreateToken(
-		userCredential.Username,
+		userInfo.ID,
+		cartInfo.ID,
 		server.config.AccessTokenDuration,
 	)
 	if err != nil {
@@ -143,7 +156,8 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	}
 
 	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(
-		userCredential.Username,
+		userInfo.ID,
+		cartInfo.ID,
 		server.config.RefreshTokenDuration,
 	)
 	if err != nil {
@@ -159,7 +173,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		AccessTokenExpiresAt:  accessPayload.ExpiredAt,
 		RefreshToken:          refreshToken,
 		RefreshTokenExpiresAt: refreshPayload.ExpiredAt,
-		User:                  newUserResponse(userCredential, userInfo),
+		User:                  newUserResponse(userCredential, userInfo, cartInfo),
 	}
 	ctx.JSON(http.StatusOK, res)
 }
