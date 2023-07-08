@@ -18,6 +18,7 @@ type CreateUserTxParams struct {
 type CreateUserTxResult struct {
 	UserCredential UserCredential
 	UserInfo       UserInfo
+	UserCart       UserCart
 }
 
 func (store *SQLStore) CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error) {
@@ -30,7 +31,6 @@ func (store *SQLStore) CreateUserTx(ctx context.Context, arg CreateUserTxParams)
 		if err != nil {
 			return err
 		}
-
 		result.UserCredential, err = queries.CreateUserCredential(ctx, CreateUserCredentialParams{
 			ID:             credentialId,
 			Username:       arg.Username,
@@ -53,7 +53,18 @@ func (store *SQLStore) CreateUserTx(ctx context.Context, arg CreateUserTxParams)
 			LastName:    arg.LastName,
 			MiddleName:  arg.MiddleName,
 		})
+		if err != nil {
+			return err
+		}
 
+		cartId, err := uuid.NewRandom()
+		if err != nil {
+			return err
+		}
+		result.UserCart, err = queries.CreateCart(ctx, CreateCartParams{
+			ID:    cartId,
+			Owner: infoId,
+		})
 		return err
 	})
 

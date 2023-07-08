@@ -6,6 +6,11 @@ INSERT INTO user_cart (
     $1, $2
 ) RETURNING *;
 
+-- name: GetCartByOwner :one
+SELECT * FROM user_cart
+WHERE owner = $1
+LIMIT 1;
+
 -- name: GetCartByID :one
 SELECT * FROM user_cart
 WHERE id = $1
@@ -53,14 +58,15 @@ SELECT
 	cart_item.id,
 	cart_item.cart_id,
 	cart_item.quantity,
-	product.price AS price,
-	product_inventory.quantity AS qty_in_stock,
+	text(product.name),
+	float8(product.price),
+	int2(product_inventory.quantity) AS qty_in_stock,
 	float8(CASE
 		WHEN product_discount.active THEN (product.price * (1 - product_discount.discount_percent / 100) * cart_item.quantity)
 		ELSE (product.price * cart_item.quantity )
 	END) AS total,
-	product_discount.discount_percent AS discount_percent,
-	product_discount.active AS discount_active
+	float8(product_discount.discount_percent),
+	bool(product_discount.active) AS discount_active
 FROM cart_item
 LEFT JOIN product
     ON cart_item.product_id = product.id

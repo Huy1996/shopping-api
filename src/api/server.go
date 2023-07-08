@@ -52,5 +52,11 @@ func (server *Server) setupRouter() {
 	router.POST("/users", server.createUser)
 	router.POST("/users/login", server.loginUser)
 
+	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
+
+	// routing require authorization
+	authRoutes.POST("/cart", server.addItemToCart)
+	authRoutes.GET("/cart", server.getCartItemList)
+
 	server.router = router
 }
