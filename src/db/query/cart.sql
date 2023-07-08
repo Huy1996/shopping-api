@@ -58,7 +58,7 @@ SELECT
 	cart_item.id,
 	cart_item.cart_id,
 	cart_item.quantity,
-	text(product.name),
+	text(product.name) AS name,
 	float8(product.price),
 	int2(product_inventory.quantity) AS qty_in_stock,
 	float8(CASE

@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -242,6 +243,45 @@ func TestGetCartItemListAPI(t *testing.T) {
 				require.Equal(t, http.StatusBadRequest, recorder.Code)
 			},
 		},
+		{
+			name: "InternalError1",
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, userInfo.ID, userCart.ID, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetCartProductDetailList(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return([]db.GetCartProductDetailListRow{}, sql.ErrConnDone)
+
+				store.EXPECT().
+					GetTotal(gomock.Any(), gomock.Any()).
+					Times(0)
+
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+		{
+			name: "InternalError2",
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, userInfo.ID, userCart.ID, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetCartProductDetailList(gomock.Any(), gomock.Any()).
+					Times(1)
+
+				store.EXPECT().
+					GetTotal(gomock.Any(), gomock.Eq(userCart.ID)).
+					Times(1).Return(util.RandomFloat(1, 100), sql.ErrConnDone)
+
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
 	}
 
 	for i := range testCases {
@@ -265,7 +305,254 @@ func TestGetCartItemListAPI(t *testing.T) {
 			server.router.ServeHTTP(recorder, request)
 			testCase.checkResponse(recorder)
 		})
+	}
+}
 
+func TestRemoveFromCartAPI(t *testing.T) {
+	userInfo, _, userCart, _ := randomAccount(t)
+	id, err := uuid.NewRandom()
+	require.NoError(t, err)
+
+	testCases := []struct {
+		name          string
+		cartItemId    string
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(recorder *httptest.ResponseRecorder)
+	}{
+		{
+			name:       "OK",
+			cartItemId: id.String(),
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, userInfo.ID, userCart.ID, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetCartItemDetail(gomock.Any(), gomock.Eq(id)).
+					Times(1).
+					Return(db.GetCartItemDetailRow{
+						CartID: userCart.ID,
+						ID:     id,
+					}, nil)
+
+				arg := db.RemoveFromCartTxParam{
+					CartItemID: id,
+				}
+				store.EXPECT().
+					RemoveFromCartTx(gomock.Any(), gomock.Eq(arg)).
+					Times(1)
+
+				productListArg := db.GetCartProductDetailListParams{
+					CartID: userCart.ID,
+					Limit:  5,
+					Offset: 0,
+				}
+				store.EXPECT().
+					GetCartProductDetailList(gomock.Any(), gomock.Eq(productListArg)).
+					Times(1)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, recorder.Code)
+			},
+		},
+		{
+			name:       "CartItemNotExist",
+			cartItemId: id.String(),
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, userInfo.ID, userCart.ID, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetCartItemDetail(gomock.Any(), gomock.Eq(id)).
+					Times(1).
+					Return(db.GetCartItemDetailRow{}, sql.ErrNoRows)
+
+				store.EXPECT().
+					RemoveFromCartTx(gomock.Any(), gomock.Any).
+					Times(0)
+
+				store.EXPECT().
+					GetCartProductDetailList(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+			},
+		},
+		{
+			name:       "CartIDNotMatch",
+			cartItemId: id.String(),
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, userInfo.ID, userCart.ID, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				cartId, _ := uuid.NewRandom()
+				store.EXPECT().
+					GetCartItemDetail(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.GetCartItemDetailRow{
+						CartID: cartId,
+					}, nil)
+
+				store.EXPECT().
+					RemoveFromCartTx(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				store.EXPECT().
+					GetCartProductDetailList(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, recorder.Code)
+			},
+		},
+		{
+			name:       "InternalError1",
+			cartItemId: id.String(),
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, userInfo.ID, userCart.ID, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetCartItemDetail(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.GetCartItemDetailRow{}, sql.ErrConnDone)
+
+				store.EXPECT().
+					RemoveFromCartTx(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				store.EXPECT().
+					GetCartProductDetailList(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+		{
+			name:       "InternalError2",
+			cartItemId: id.String(),
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, userInfo.ID, userCart.ID, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetCartItemDetail(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.GetCartItemDetailRow{
+						CartID: userCart.ID,
+					}, nil)
+
+				store.EXPECT().
+					RemoveFromCartTx(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.RemoveFromCartTxResult{}, sql.ErrConnDone)
+
+				store.EXPECT().
+					GetCartProductDetailList(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+		{
+			name:       "InternalError3",
+			cartItemId: id.String(),
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, userInfo.ID, userCart.ID, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetCartItemDetail(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.GetCartItemDetailRow{
+						CartID: userCart.ID,
+					}, nil)
+
+				store.EXPECT().
+					RemoveFromCartTx(gomock.Any(), gomock.Any()).
+					Times(1)
+
+				store.EXPECT().
+					GetCartProductDetailList(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return([]db.GetCartProductDetailListRow{}, sql.ErrConnDone)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+		{
+			name:       "MissingParams",
+			cartItemId: "",
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, userInfo.ID, userCart.ID, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetCartItemDetail(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				store.EXPECT().
+					RemoveFromCartTx(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				store.EXPECT().
+					GetCartProductDetailList(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusNotFound, recorder.Code)
+			},
+		},
+		{
+			name:       "InvalidID",
+			cartItemId: "invalid",
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, userInfo.ID, userCart.ID, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetCartItemDetail(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				store.EXPECT().
+					RemoveFromCartTx(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				store.EXPECT().
+					GetCartProductDetailList(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+			},
+		},
+	}
+
+	for i := range testCases {
+		testCase := testCases[i]
+
+		t.Run(testCase.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			store := mockdb.NewMockStore(ctrl)
+			testCase.buildStubs(store)
+
+			server := newTestServer(t, store)
+			recorder := httptest.NewRecorder()
+
+			url := fmt.Sprintf("/cart/%v", testCase.cartItemId)
+			request, err := http.NewRequest(http.MethodDelete, url, nil)
+			require.NoError(t, err)
+
+			testCase.setupAuth(t, request, server.tokenMaker)
+			server.router.ServeHTTP(recorder, request)
+			testCase.checkResponse(recorder)
+		})
 	}
 }
 

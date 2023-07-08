@@ -87,7 +87,6 @@ func (store *SQLStore) RemoveFromCartTx(ctx context.Context, arg RemoveFromCartT
 		}
 
 		result.Total, err = queries.GetTotal(ctx, cartItem.CartID)
-
 		return err
 	})
 
